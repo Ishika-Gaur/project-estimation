@@ -8,6 +8,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// FastAPI sends a string `detail` for raised errors and an array for validation failures.
+const readError = (data) => {
+  if (typeof data.detail === "string") return data.detail;
+  if (typeof data.message === "string") return data.message;
+  return "";
+};
+
 const LABEL_CLASS =
   "block font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground";
 const INPUT_CLASS =
@@ -71,7 +78,7 @@ export default function SignupPage() {
           res.status === 400 || res.status === 409 || res.status === 422
             ? "Could not create your account."
             : "Could not reach the server. Please try again.";
-        setFormError(data.detail || data.message || fallback);
+        setFormError(readError(data) || fallback);
         return;
       }
 

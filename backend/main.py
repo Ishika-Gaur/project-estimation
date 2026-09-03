@@ -4,6 +4,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 from dotenv import load_dotenv
 
+from auth import router as auth_router
+
 load_dotenv()
 
 app = FastAPI()
@@ -19,6 +21,8 @@ app.add_middleware(
 MONGO_URI = os.getenv("MONGO_URI")
 client = AsyncIOMotorClient(MONGO_URI)
 db = client.project_estimation
+
+app.include_router(auth_router)
 
 @app.get("/")
 async def root():

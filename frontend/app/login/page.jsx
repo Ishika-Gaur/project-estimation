@@ -8,6 +8,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// FastAPI sends a string `detail` for raised errors and an array for validation failures.
+const readError = (data) => {
+  if (typeof data.detail === "string") return data.detail;
+  if (typeof data.message === "string") return data.message;
+  return "";
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -47,7 +54,7 @@ export default function LoginPage() {
           res.status === 401 || res.status === 400
             ? "Invalid email or password."
             : "Could not reach the server. Please try again.";
-        setFormError(data.detail || data.message || fallback);
+        setFormError(readError(data) || fallback);
         return;
       }
 
