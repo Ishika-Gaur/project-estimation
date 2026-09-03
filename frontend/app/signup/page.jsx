@@ -67,7 +67,11 @@ export default function SignupPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setFormError(data.detail || data.message || "Could not create your account.");
+        const fallback =
+          res.status === 400 || res.status === 409 || res.status === 422
+            ? "Could not create your account."
+            : "Could not reach the server. Please try again.";
+        setFormError(data.detail || data.message || fallback);
         return;
       }
 

@@ -43,7 +43,11 @@ export default function LoginPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setFormError(data.detail || data.message || "Invalid email or password.");
+        const fallback =
+          res.status === 401 || res.status === 400
+            ? "Invalid email or password."
+            : "Could not reach the server. Please try again.";
+        setFormError(data.detail || data.message || fallback);
         return;
       }
 
