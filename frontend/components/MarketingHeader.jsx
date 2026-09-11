@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, LogOut, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { isLoggedIn, getUser, removeToken } from "@/lib/auth";
 
 const NAV = [
   { label: "Home", to: "/" },
@@ -14,7 +15,32 @@ const NAV = [
 
 export function MarketingHeader() {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Wait for client mount before reading localStorage
+  useEffect(() => {
+    setMounted(true);
+    setLoggedIn(isLoggedIn());
+    setUser(getUser());
+  }, []);
+
+  // Re-check auth state on every route change
+  useEffect(() => {
+    if (!mounted) return;
+    setLoggedIn(isLoggedIn());
+    setUser(getUser());
+  }, [pathname, mounted]);
+
+  function handleLogout() {
+    removeToken();
+    setLoggedIn(false);
+    setUser(null);
+    router.push("/");
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-background/85 backdrop-blur-sm">
@@ -32,6 +58,7 @@ export function MarketingHeader() {
         </Link>
 
         <div className="flex items-center gap-3">
+          {/* Desktop nav links */}
           <nav className="hidden items-center gap-8 font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground md:flex">
             {NAV.map((item) => {
               const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
@@ -46,12 +73,57 @@ export function MarketingHeader() {
               );
             })}
           </nav>
-          <Link
-            href="/estimate"
-            className="rounded-md bg-accent px-4 py-2 font-mono text-xs font-semibold uppercase tracking-[0.1em] text-accent-foreground transition-colors hover:bg-accent-ink"
-          >
-            Get Started
-          </Link>
+
+          {/* Auth buttons — always visible (no hidden class), like the original "Get Started" */}
+          {mounted && loggedIn ? (
+            <>
+              {user?.role === "admin" && (
+                <Link
+                  href="/admin"
+                  className="hidden rounded-md border border-line bg-surface px-3 py-2 font-mono text-xs uppercase tracking-[0.1em] text-foreground transition-colors hover:border-foreground/30 sm:inline-flex"
+                >
+                  Admin
+                </Link>
+              )}
+              {/* User chip — hide on very small screens */}
+              <div className="hidden items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 sm:flex">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-accent font-display text-[10px] font-bold text-white">
+                  {user?.name?.[0]?.toUpperCase() ?? <User className="size-3" />}
+                </span>
+                <span className="max-w-[100px] truncate font-mono text-xs text-foreground">
+                  {user?.name ?? "Account"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                id="header-logout"
+                className="flex items-center gap-1.5 rounded-md border border-line bg-surface px-3 py-2 font-mono text-xs uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
+              >
+                <LogOut className="size-3.5" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                id="header-login"
+                className="rounded-md border border-line bg-surface px-4 py-2 font-mono text-xs uppercase tracking-[0.1em] text-foreground transition-colors hover:border-foreground/30"
+              >
+                Login
+              </Link>
+              <Link
+                href="/signup"
+                id="header-signup"
+                className="rounded-md bg-accent px-4 py-2 font-mono text-xs font-semibold uppercase tracking-[0.1em] text-accent-foreground transition-colors hover:bg-accent-ink"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
+
+          {/* Mobile hamburger */}
           <button
             type="button"
             aria-label="Toggle navigation"
@@ -64,6 +136,7 @@ export function MarketingHeader() {
         </div>
       </div>
 
+      {/* Mobile dropdown menu */}
       {open && (
         <nav className="border-t border-line bg-surface px-5 py-3 font-mono text-xs uppercase tracking-[0.14em] md:hidden">
           {NAV.map((item) => {
@@ -81,6 +154,47 @@ export function MarketingHeader() {
               </Link>
             );
           })}
+          {/* Mobile auth links in hamburger menu */}
+          <div className="mt-2 flex flex-col gap-1 border-t border-line pt-2">
+            {mounted && loggedIn ? (
+              <>
+                {user?.role === "admin" && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setOpen(false)}
+                    className="block rounded-md px-2 py-2.5 font-semibold text-accent-ink transition-colors hover:bg-background"
+                  >
+                    Admin dashboard
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { handleLogout(); setOpen(false); }}
+                  className="flex items-center gap-2 rounded-md px-2 py-2.5 text-left text-muted-foreground transition-colors hover:bg-background hover:text-destructive"
+                >
+                  <LogOut className="size-3.5" />
+                  Logout {user?.name ? `(${user.name})` : ""}
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="block rounded-md px-2 py-2.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={() => setOpen(false)}
+                  className="block rounded-md px-2 py-2.5 font-semibold text-accent-ink transition-colors hover:bg-background"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </div>
         </nav>
       )}
     </header>

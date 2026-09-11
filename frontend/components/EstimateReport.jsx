@@ -3,6 +3,7 @@ import { formatCompact, formatRange } from "@/lib/estimates";
 
 export function EstimateReport({ estimate }) {
   const maxLine = Math.max(...estimate.breakdown.map((b) => b.max));
+  const ai = estimate.aiAnalysis;
 
   return (
     <>
@@ -90,6 +91,62 @@ export function EstimateReport({ estimate }) {
               ))}
             </div>
           </div>
+
+          {ai && (
+            <>
+              <div className="mt-5">
+                <h3 className="label-mono">Requirements & Scope</h3>
+                <ul className="mt-3 space-y-2 text-sm text-foreground">
+                  {ai.requirements.map((item) => <li key={item}>• {item}</li>)}
+                </ul>
+                {ai.missing_or_unclear.length > 0 && (
+                  <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                    Clarify next: {ai.missing_or_unclear.join(" ")}
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                {[["MVP", ai.features.mvp], ["Advanced", ai.features.advanced], ["Optional", ai.features.optional]].map(([label, items]) => (
+                  <div key={label} className="rounded-lg border border-line bg-background p-3">
+                    <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{label}</div>
+                    <div className="mt-2 space-y-2">
+                      {items.map((item) => (
+                        <div key={item.name} className="text-xs text-foreground">
+                          <div className="font-semibold">{item.name}</div>
+                          <div className="text-muted-foreground">{item.complexity} · {item.estimated_hours}h</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 border-t border-line pt-5">
+                <h3 className="label-mono">Timeline & Pricing Context</h3>
+                <p className="mt-3 text-sm leading-relaxed text-foreground">
+                  {ai.timeline.hours} hours · {ai.timeline.days} days · {ai.timeline.weeks} weeks. MVP: {ai.timeline.mvp}
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{ai.pricing.explanation}</p>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Market context: {ai.market_analysis.notes}</p>
+              </div>
+
+              {ai.suggestions.length > 0 && (
+                <div className="mt-5">
+                  <h3 className="label-mono">Suggested Additions</h3>
+                  <div className="mt-3 space-y-3">
+                    {ai.suggestions.map((suggestion) => (
+                      <div key={suggestion.title} className="border-l-2 border-accent pl-3">
+                        <div className="text-sm font-semibold text-foreground">{suggestion.title}</div>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{suggestion.description} {suggestion.reason}</p>
+                        <div className="mt-1 font-mono text-[10px] uppercase text-muted-foreground">{suggestion.complexity} · {suggestion.additional_time} · {suggestion.additional_cost}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </>

@@ -10,7 +10,6 @@ import {
   POPULAR_TECHS,
   SUGGESTED_FEATURES,
   generateEstimate,
-  saveEstimate,
   listEstimates,
 } from "@/lib/estimates";
 import {
@@ -58,9 +57,12 @@ export default function EstimatePage() {
   const [currentEstimate, setCurrentEstimate] = useState(null);
   const [pastEstimates, setPastEstimates] = useState([]);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    setPastEstimates(listEstimates());
+    listEstimates()
+      .then(setPastEstimates)
+      .catch(() => setPastEstimates([]));
   }, []);
 
   const addTag = (tagToAdd) => {
@@ -85,11 +87,12 @@ export default function EstimatePage() {
     });
   };
 
-  const handleCalculate = (e) => {
+  const handleCalculate = async (e) => {
     e.preventDefault();
+    setErrorMessage("");
     setIsCalculating(true);
 
-    setTimeout(() => {
+    try {
       const input = {
         projectName: projectName.trim() || "Untitled Project",
         buyerType, // drives pricing tier/multiplier
@@ -99,14 +102,16 @@ export default function EstimatePage() {
         platforms,
       };
 
-      const est = generateEstimate(input);
-      saveEstimate(est);
+      const est = await generateEstimate(input);
       setCurrentEstimate(est);
-      setPastEstimates(listEstimates());
-      setIsCalculating(false);
+      setPastEstimates(await listEstimates());
       setFormOpen(false); // collapse the "duplicate-looking" form after a result exists
       window.scrollTo({ top: 0, behavior: "smooth" });
-    }, 350);
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to generate an estimate. Please try again.");
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   const handleReset = () => {
@@ -117,6 +122,7 @@ export default function EstimatePage() {
     setTags(["Next.js", "Authentication"]);
     setPlatforms(["Web"]);
     setCurrentEstimate(null);
+    setErrorMessage("");
     setFormOpen(true);
   };
 
@@ -280,6 +286,11 @@ export default function EstimatePage() {
                 </div>
 
                 <form onSubmit={handleCalculate} className="space-y-5">
+                  {errorMessage && (
+                    <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3.5 py-3 text-sm text-destructive" role="alert">
+                      {errorMessage}
+                    </div>
+                  )}
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div>
                       <label htmlFor="projectName" className="label-mono block">

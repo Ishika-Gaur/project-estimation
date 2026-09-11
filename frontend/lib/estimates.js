@@ -84,7 +84,16 @@ export async function generateEstimate(input) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (!res.ok) throw new Error("Failed to generate estimate");
+  if (!res.ok) {
+    let detail = "Failed to generate estimate";
+    try {
+      const body = await res.json();
+      detail = body.detail || detail;
+    } catch {
+      // Keep the generic message when the backend did not return JSON.
+    }
+    throw new Error(detail);
+  }
   return res.json();
 }
 

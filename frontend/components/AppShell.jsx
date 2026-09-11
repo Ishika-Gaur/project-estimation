@@ -17,7 +17,14 @@ export function AppShell({
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    const sync = () => setTotal(listEstimates().length);
+    const sync = async () => {
+      try {
+        const list = await listEstimates();
+        setTotal(Array.isArray(list) ? list.length : 0);
+      } catch {
+        setTotal(0);
+      }
+    };
     sync();
     window.addEventListener("costlyai:estimates", sync);
     return () => window.removeEventListener("costlyai:estimates", sync);
