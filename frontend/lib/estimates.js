@@ -117,3 +117,17 @@ export async function clearEstimates() {
   if (!res.ok) throw new Error("Failed to clear estimates");
   return res.json();
 }
+
+/** Fetches currently active market rates */
+export async function fetchMarketRates() {
+  const res = await fetch(`${API_URL}/api/market-rates`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+/** Fetches market rate update status (source count, last update, etc.) */
+export async function fetchMarketRateStatus() {
+  const res = await fetch(`${API_URL}/api/market-rates/status`);
+  if (!res.ok) return null;
+  return res.json();
+}

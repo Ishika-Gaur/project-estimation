@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 import { listEstimates } from "@/lib/estimates";
 
 const LINKS = [
-  { label: "Overview", href: "/estimate" },
-  { label: "New Estimate", href: "/estimate" },
+  { label: "Cost Estimator", href: "/estimate" },
+  { label: "Project Analysis", href: "/analyze" },
+  { label: "Task Distribution", href: "/task-distribution" },
 ];
 
 export function AppShell({

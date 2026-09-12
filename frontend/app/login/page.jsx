@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LogIn, AlertCircle, Loader2 } from "lucide-react";
-import { setToken } from "@/lib/auth";
+import { setToken, removeToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -45,7 +45,7 @@ export default function LoginPage() {
         setError("Admins cannot log in here. Please use the Admin Portal.");
         return;
       }
-      
+
       setToken(data.access_token, data.refresh_token);
       router.push("/estimate");
     } catch {

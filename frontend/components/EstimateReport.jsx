@@ -1,9 +1,23 @@
 import { CostBar } from "@/components/CostBar";
 import { formatCompact, formatRange } from "@/lib/estimates";
 
+/** Parse market-rate metadata from the pricing explanation string */
+function parseMarketInfo(explanation) {
+  if (!explanation) return null;
+  const info = {};
+  const basisMatch = explanation.match(/Rate basis:\s*(.+?)\./);
+  if (basisMatch) info.basis = basisMatch[1];
+  const sourcesMatch = explanation.match(/Sources:\s*(\d+)\s*verified/);
+  if (sourcesMatch) info.sourceCount = parseInt(sourcesMatch[1], 10);
+  const dateMatch = explanation.match(/Market rates last updated:\s*(.+?)\./);
+  if (dateMatch) info.lastUpdated = dateMatch[1];
+  return info.basis ? info : null;
+}
+
 export function EstimateReport({ estimate }) {
   const maxLine = Math.max(...estimate.breakdown.map((b) => b.max));
   const ai = estimate.aiAnalysis;
+  const marketInfo = ai ? parseMarketInfo(ai.pricing?.explanation) : null;
 
   return (
     <>
@@ -130,6 +144,20 @@ export function EstimateReport({ estimate }) {
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{ai.pricing.explanation}</p>
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Market context: {ai.market_analysis.notes}</p>
               </div>
+
+              {/* Market Rate Info */}
+              {marketInfo && (
+                <div className="mt-4 rounded-lg border border-accent/20 bg-accent/5 p-3">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent-ink">
+                    India Market-Based Pricing
+                  </div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                    {marketInfo.basis}.
+                    {marketInfo.sourceCount > 0 && ` ${marketInfo.sourceCount} verified sources.`}
+                    {marketInfo.lastUpdated && ` Last updated: ${marketInfo.lastUpdated}.`}
+                  </p>
+                </div>
+              )}
 
               {ai.suggestions.length > 0 && (
                 <div className="mt-5">

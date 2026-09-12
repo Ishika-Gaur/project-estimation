@@ -17,6 +17,8 @@ import {
   RotateCcw,
   Plus,
   X,
+  Github,
+  Globe,
   History,
   Calculator,
   ArrowRight,
@@ -48,6 +50,8 @@ export default function EstimatePage() {
   const [buyerType, setBuyerType] = useState("freelancer");
   const [audience, setAudience] = useState("internal");
   const [description, setDescription] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [deployedUrl, setDeployedUrl] = useState("");
   const [tags, setTags] = useState(["Next.js", "Authentication"]);
   const [customTagInput, setCustomTagInput] = useState("");
   const [platforms, setPlatforms] = useState(["Web"]);
@@ -98,6 +102,8 @@ export default function EstimatePage() {
         buyerType, // drives pricing tier/multiplier
         audience, // drives scale/infra assumptions
         description,
+        github_url: githubUrl.trim(),
+        deployed_url: deployedUrl.trim(),
         features: tags,
         platforms,
       };
@@ -119,6 +125,8 @@ export default function EstimatePage() {
     setBuyerType("freelancer");
     setAudience("internal");
     setDescription("");
+    setGithubUrl("");
+    setDeployedUrl("");
     setTags(["Next.js", "Authentication"]);
     setPlatforms(["Web"]);
     setCurrentEstimate(null);
@@ -383,6 +391,48 @@ export default function EstimatePage() {
                       onChange={(e) => setDescription(e.target.value)}
                       className="mt-1.5 w-full rounded-md border border-line bg-background p-3.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
                     />
+                  </div>
+
+                  <div className="rounded-xl border border-line bg-background/50 p-4">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div>
+                        <label className="label-mono block">Project Analysis (Optional)</label>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Add a description, GitHub link, deployed link, or any combination.
+                        </p>
+                      </div>
+                      <Sparkles className="size-4 shrink-0 text-accent-ink" />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="githubUrl" className="label-mono flex items-center gap-1.5">
+                          <Github className="size-3.5 text-muted-foreground" />
+                          GitHub Repository URL
+                        </label>
+                        <input
+                          id="githubUrl"
+                          type="url"
+                          placeholder="https://github.com/user/project"
+                          value={githubUrl}
+                          onChange={(e) => setGithubUrl(e.target.value)}
+                          className="mt-1.5 w-full rounded-md border border-line bg-surface px-3.5 py-2.5 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="deployedUrl" className="label-mono flex items-center gap-1.5">
+                          <Globe className="size-3.5 text-muted-foreground" />
+                          Deployed Project URL
+                        </label>
+                        <input
+                          id="deployedUrl"
+                          type="url"
+                          placeholder="https://myproject.com"
+                          value={deployedUrl}
+                          onChange={(e) => setDeployedUrl(e.target.value)}
+                          className="mt-1.5 w-full rounded-md border border-line bg-surface px-3.5 py-2.5 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="rounded-xl border border-line bg-background/50 p-4">

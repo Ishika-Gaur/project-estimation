@@ -64,7 +64,7 @@ async def create_estimate(payload: EstimateInput, request: Request, user=Depends
     if not payload.description.strip() and not payload.features:
         raise HTTPException(status_code=422, detail="Describe the project or add at least one feature.")
     try:
-        analysis = await analyze_project(payload)
+        analysis = await analyze_project(payload, db=request.app.state.db)
         estimate = _legacy_estimate(payload, analysis.model_dump(), user)
         try:
             await request.app.state.db.estimates.insert_one(estimate.copy())

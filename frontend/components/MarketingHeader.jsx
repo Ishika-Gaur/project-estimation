@@ -7,9 +7,9 @@ import { useState, useEffect } from "react";
 import { isLoggedIn, getUser, removeToken } from "@/lib/auth";
 
 const NAV = [
-  { label: "Home", to: "/" },
-  { label: "How It Works", to: "/how-it-works" },
+  { label: "Estimator", to: "/estimate" },
   { label: "Features", to: "/features" },
+  { label: "How It Works", to: "/how-it-works" },
   { label: "About", to: "/about" },
 ];
 

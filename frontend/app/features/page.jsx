@@ -42,12 +42,26 @@ export default function Features() {
           })}
         </div>
 
-        <Link
-          href="/estimate"
-          className="mt-10 inline-block rounded-md bg-accent px-6 py-3 font-mono text-sm font-semibold uppercase tracking-[0.08em] text-accent-foreground transition-colors hover:bg-accent-ink"
-        >
-          Generate an estimate
-        </Link>
+        <div className="mt-12 flex flex-wrap items-center gap-3">
+          <Link
+            href="/estimate"
+            className="rounded-md bg-accent px-6 py-3 font-mono text-sm font-semibold uppercase tracking-[0.08em] text-accent-foreground transition-colors hover:bg-accent-ink"
+          >
+            Cost Estimator
+          </Link>
+          <Link
+            href="/analyze"
+            className="rounded-md border border-line bg-surface px-6 py-3 font-mono text-sm uppercase tracking-[0.08em] text-foreground transition-colors hover:border-foreground/30"
+          >
+            Analyze Codebase
+          </Link>
+          <Link
+            href="/task-distribution"
+            className="rounded-md border border-line bg-surface px-6 py-3 font-mono text-sm uppercase tracking-[0.08em] text-foreground transition-colors hover:border-foreground/30"
+          >
+            Task Distribution
+          </Link>
+        </div>
       </main>
       <MarketingFooter />
     </div>

@@ -6,6 +6,8 @@ class EstimateInput(BaseModel):
     projectName: Optional[str] = None
     projectType: str = "Web Application"
     description: Optional[str] = ""
+    github_url: Optional[str] = ""
+    deployed_url: Optional[str] = ""
     features: List[str] = []
     users: str = "1,000–10,000"
     platforms: List[str] = ["Web"]
@@ -124,3 +126,56 @@ class PasswordResetConfirm(BaseModel):
 
 class RefreshToken(BaseModel):
     refresh_token: str
+
+
+# Project Analysis Models
+class ProjectAnalysisInput(BaseModel):
+    description: Optional[str] = ""
+    github_url: Optional[str] = ""
+    deployed_url: Optional[str] = ""
+
+
+class Task(BaseModel):
+    name: str
+    description: str
+    priority: str  # high, medium, low
+    estimated_hours: int
+    dependencies: List[str] = []
+    recommended_order: int
+
+
+class ModuleStatus(BaseModel):
+    name: str
+    completion_percentage: int
+    status: str  # completed, in_progress, not_started
+
+
+class TeamMember(BaseModel):
+    name: str
+    role: str
+    skills: List[str]
+
+
+class TaskAssignment(BaseModel):
+    member_name: str
+    tasks: List[Task]
+    total_hours: int
+
+
+class ProjectAnalysisResult(BaseModel):
+    overall_completion: int
+    modules: List[ModuleStatus]
+    completed_features: List[str]
+    in_progress_features: List[str]
+    remaining_features: List[str]
+    recommended_next_steps: List[str]
+    estimated_remaining_hours: int
+    project_type: str
+    analysis_source: str  # description, github, deployed, combined
+    evidence_notes: List[str]
+
+
+class TaskPlanInput(BaseModel):
+    analysis: ProjectAnalysisResult
+    work_type: str = "solo"
+    team_members: Optional[List[TeamMember]] = None
