@@ -161,8 +161,12 @@ async def weekly_rate_updater(db):
         try:
             active = await get_active_snapshot(db)
             updated_at = active.get("collected_at")
+
+            if updated_at and updated_at.tzinfo is None:
+                    updated_at = updated_at.replace(tzinfo=timezone.utc)
+
             if not updated_at or _now() - updated_at >= UPDATE_INTERVAL:
-                await update_market_rates(db)
+             await update_market_rates(db)
         except Exception as exc:
             print(f"[CostlyAI] Market-rate update failed: {exc}")
         await asyncio.sleep(24 * 60 * 60)
