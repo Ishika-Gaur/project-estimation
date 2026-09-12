@@ -105,7 +105,7 @@ export async function authFetch(url, options = {}) {
     const refreshToken = getRefreshToken();
     if (refreshToken) {
       try {
-        const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const API = process.env.NEXT_PUBLIC_API_URL || "http://https://project-estimation-backend-fp5x.onrender.com";
         const refreshResponse = await fetch(`${API}/auth/refresh`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

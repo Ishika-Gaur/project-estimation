@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { authFetch, getUser, isLoggedIn, removeToken } from "@/lib/auth";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://https://project-estimation-backend-fp5x.onrender.com";
 const NAV = [
   ["dashboard", "Overview", LayoutDashboard],
   ["estimates", "Estimates", ClipboardList],

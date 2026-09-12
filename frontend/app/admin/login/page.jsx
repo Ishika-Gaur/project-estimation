@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
 import { setToken, removeToken } from "@/lib/auth";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://https://project-estimation-backend-fp5x.onrender.com";
 
 export default function AdminLoginPage() {
   const router = useRouter();
