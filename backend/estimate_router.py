@@ -15,14 +15,37 @@ router = APIRouter(prefix="/api", tags=["estimates"])
 def _legacy_estimate(payload: EstimateInput, analysis: dict, user: dict | None = None) -> dict:
     features = analysis["features"]
     all_features = features["mvp"] + features["advanced"] + features["optional"]
-    breakdown = [
-        ("Frontend Development", 0.32),
-        ("Backend Development", 0.28),
-        ("Database", 0.12),
-        ("API Integrations", 0.17),
-        ("Testing & Deployment", 0.11),
-    ]
-    typical = analysis["pricing"]["typical"]
+    scope = analysis.get("work_scope", {})
+
+    breakdown = []
+
+    if scope.get("frontend"):
+     breakdown.append("Frontend Development")
+
+     if scope.get("backend"):
+      breakdown.append("Backend Development")
+
+     if scope.get("database"):
+       breakdown.append("Database")
+
+     if scope.get("api_integration"):
+      breakdown.append("API Integration")
+
+    if scope.get("ai_integration"):
+     breakdown.append("AI Integration")
+
+    if scope.get("bug_fixing"):
+     breakdown.append("Bug Fixing")
+
+    if scope.get("feature_addition"):
+     breakdown.append("Feature Addition")
+
+    if scope.get("testing"):
+     breakdown.append("Testing")
+
+    if scope.get("deployment"):
+     breakdown.append("Deployment")
+     typical = analysis["pricing"]["typical"]
     budget = analysis["pricing"]["budget"]
     premium = analysis["pricing"]["premium"]
     timeline = analysis["timeline"]

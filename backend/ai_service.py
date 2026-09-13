@@ -71,6 +71,7 @@ ANALYSIS_SCHEMA = {
             "type": "array",
             "items": {"$ref": "#/$defs/technology"},
         },
+
         "complexity": {
             "type": "object",
             "additionalProperties": False,
@@ -81,6 +82,7 @@ ANALYSIS_SCHEMA = {
             },
             "required": ["level", "score", "reason"],
         },
+
         "timeline": {
             "type": "object",
             "additionalProperties": False,
@@ -92,6 +94,7 @@ ANALYSIS_SCHEMA = {
             },
             "required": ["hours", "days", "weeks", "mvp"],
         },
+
         "pricing": {
             "type": "object",
             "additionalProperties": False,
@@ -105,6 +108,7 @@ ANALYSIS_SCHEMA = {
             },
             "required": ["budget", "typical", "premium", "mvp", "currency", "explanation"],
         },
+
         "market_analysis": {
             "type": "object",
             "additionalProperties": False,
@@ -115,12 +119,15 @@ ANALYSIS_SCHEMA = {
             },
             "required": ["demand", "trends", "notes"],
         },
+
         "suggestions": {"type": "array", "items": {"$ref": "#/$defs/suggestion"}},
     },
+
     "required": [
         "project_category", "summary", "requirements", "missing_or_unclear", "features",
         "technology", "complexity", "timeline", "pricing", "market_analysis", "suggestions",
     ],
+
     "$defs": {
         "feature": {
             "type": "object", "additionalProperties": False,
@@ -129,6 +136,7 @@ ANALYSIS_SCHEMA = {
                 "complexity": {"type": "string"}, "estimated_hours": {"type": "integer"},
             }, "required": ["name", "description", "complexity", "estimated_hours"],
         },
+
         "technology": {
             "type": "object", "additionalProperties": False,
             "properties": {
@@ -136,6 +144,33 @@ ANALYSIS_SCHEMA = {
                 "reason": {"type": "string"},
             }, "required": ["layer", "recommendation", "reason"],
         },
+
+        "work_scope": {
+    "type": "object",
+    "properties": {
+        "frontend": {"type": "boolean"},
+        "backend": {"type": "boolean"},
+        "database": {"type": "boolean"},
+        "api_integration": {"type": "boolean"},
+        "ai_integration": {"type": "boolean"},
+        "bug_fixing": {"type": "boolean"},
+        "feature_addition": {"type": "boolean"},
+        "testing": {"type": "boolean"},
+        "deployment": {"type": "boolean"}
+    },
+    "required": [
+        "frontend",
+        "backend",
+        "database",
+        "api_integration",
+        "ai_integration",
+        "bug_fixing",
+        "feature_addition",
+        "testing",
+        "deployment"
+    ]
+},
+
         "suggestion": {
             "type": "object", "additionalProperties": False,
             "properties": {
@@ -194,6 +229,13 @@ def _apply_india_market_pricing(payload: EstimateInput, analysis: AIAnalysis, ma
         source_info = {"status": "seed", "source_count": 0, "collected_at": None, "methodology_version": None}
 
     hours = max(1, analysis.timeline.hours)
+
+    if analysis.complexity.level == "Simple":
+        hours = min(hours, 24)
+    elif analysis.complexity.level == "Medium":
+        hours = min(hours, 60)
+    elif analysis.complexity.level == "Complex":
+           hours = min(hours, 150)
 
     # Build the explanation with market metadata
     rate_basis = "current Indian market benchmarks" if source_info.get("status") == "active" else "default Indian market benchmarks"
@@ -276,14 +318,45 @@ async def analyze_project(payload: EstimateInput, db=None) -> AIAnalysis:
             pass  # DB unavailable — will use SEED_BANDS fallback
 
     system_prompt = (
-        "You are a senior software architect and India-focused project estimator. "
-        "Understand English, Hindi, Hinglish, and mixed-language requirements. Extract intent "
-        "without translating away important details. Recommend technologies based on requirements, "
-        "not merely the user's selected tags. Return realistic INR estimates using approximate "
-        "professional development rates, clearly label market analysis as knowledge-based rather "
-        "than live research, and never claim current web access. Keep hours, days, weeks, and prices "
-        "internally consistent. Complexity must be Simple, Medium, Complex, or Enterprise."
-    )
+    "You are a senior software architect and project cost estimator for the Indian market. "
+    "Understand English, Hindi, Hinglish, and mixed-language requirements. "
+
+    "IMPORTANT: Estimate ONLY what the user actually asks for. "
+    "Do not assume extra development work. "
+    "Do not turn a small contribution into a complete project estimate. "
+
+    "FIRST identify the actual work requested from the user's description, selected features, "
+    "GitHub URL, and deployed URL. "
+
+    "The work may be one or more of: "
+    "frontend development, backend development, database work, API integration, "
+    "AI integration, authentication, payment integration, bug fixing, feature addition, "
+    "optimization, testing, or deployment. "
+
+    "If the user asks only for frontend work, do NOT estimate backend, database, or API work. "
+    "If the user asks only for backend logic, do NOT estimate frontend development. "
+    "If the user asks only to integrate AI into an existing project, estimate only the AI integration "
+    "and related necessary work. "
+    "If the user asks to fix an existing feature, estimate the fix, not the whole application. "
+    "If the user asks to add one feature to an existing application, estimate only that feature "
+    "and its necessary supporting work. "
+
+    "A GitHub URL or deployed URL means an existing project may already exist. "
+    "Do NOT assume the entire project needs to be rebuilt. "
+
+    "For a simple frontend portfolio or landing page, keep the hours and price small and "
+    "appropriate to the actual scope. "
+
+    "Use the user's selected features only when they are actually relevant to the requested work. "
+    "Do not add features that the user did not request. "
+
+    "Keep estimated hours proportional to the actual work. "
+    "Keep hours, timeline, complexity, and pricing internally consistent. "
+
+    "Return realistic INR estimates. "
+    "Complexity must be Simple, Medium, Complex, or Enterprise. "
+    "Never claim live web research."
+)
     model = os.getenv("AI_MODEL", "gemini-3.5-flash")
     body = {
         "systemInstruction": {"parts": [{"text": system_prompt}]},
