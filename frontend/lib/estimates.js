@@ -75,8 +75,7 @@ export const SUGGESTED_FEATURES = [
 /* Backend API calls (replaces old localStorage logic)                */
 /* ------------------------------------------------------------------ */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://https://project-estimation-backend-fp5x.onrender.com";
-
+const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 /** Calls backend to generate + save an estimate */
 export async function generateEstimate(input) {
   const res = await fetch(`${API_URL}/api/estimate`, {

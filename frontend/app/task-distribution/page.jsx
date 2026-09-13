@@ -25,7 +25,7 @@ import {
   Search,
 } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://https://project-estimation-backend-fp5x.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 
 const DEFAULT_TEAM_SIZE = 3;
 const TEAM_SIZE_OPTIONS = Array.from({ length: 10 }, (_, i) => i + 1);

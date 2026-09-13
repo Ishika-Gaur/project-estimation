@@ -28,8 +28,7 @@ import {
   Calculator,
 } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://https://project-estimation-backend-fp5x.onrender.com";
-
+const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 export default function AnalyzePage() {
   const router = useRouter();
   
