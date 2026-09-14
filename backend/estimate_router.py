@@ -99,9 +99,15 @@ async def create_estimate(payload: EstimateInput, request: Request, user=Depends
 
 
 @router.get("/estimates")
-async def list_estimates(request: Request):
+async def list_estimates(request: Request, user=Depends(get_optional_user)):
     try:
-        estimates = await request.app.state.db.estimates.find({}, {"_id": 0}).sort("createdAt", -1).to_list(50)
+        query = {}
+        if user and user.get("email"):
+            query["user_email"] = user["email"]
+        else:
+            # Not logged in — return empty list instead of all estimates
+            return []
+        estimates = await request.app.state.db.estimates.find(query, {"_id": 0}).sort("createdAt", -1).to_list(50)
         for estimate in estimates:
             estimate.pop("created_at", None)
         return estimates
@@ -110,8 +116,11 @@ async def list_estimates(request: Request):
 
 
 @router.get("/estimates/{estimate_id}")
-async def get_estimate(estimate_id: str, request: Request):
-    estimate = await request.app.state.db.estimates.find_one({"id": estimate_id}, {"_id": 0})
+async def get_estimate(estimate_id: str, request: Request, user=Depends(get_optional_user)):
+    query = {"id": estimate_id}
+    if user and user.get("email"):
+        query["user_email"] = user["email"]
+    estimate = await request.app.state.db.estimates.find_one(query, {"_id": 0})
     if not estimate:
         raise HTTPException(status_code=404, detail="Estimate not found.")
     return estimate

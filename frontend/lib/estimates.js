@@ -75,10 +75,12 @@ export const SUGGESTED_FEATURES = [
 /* Backend API calls (replaces old localStorage logic)                */
 /* ------------------------------------------------------------------ */
 
+import { authFetch } from "./auth";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 /** Calls backend to generate + save an estimate */
 export async function generateEstimate(input) {
-  const res = await fetch(`${API_URL}/api/estimate`, {
+  const res = await authFetch(`${API_URL}/api/estimate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -98,21 +100,21 @@ export async function generateEstimate(input) {
 
 /** Fetches all saved estimates from backend */
 export async function listEstimates() {
-  const res = await fetch(`${API_URL}/api/estimates`);
+  const res = await authFetch(`${API_URL}/api/estimates`);
   if (!res.ok) throw new Error("Failed to fetch estimates");
   return res.json();
 }
 
 /** Fetches a single estimate by id */
 export async function getEstimate(id) {
-  const res = await fetch(`${API_URL}/api/estimates/${id}`);
+  const res = await authFetch(`${API_URL}/api/estimates/${id}`);
   if (!res.ok) return null;
   return res.json();
 }
 
 /** Clears all estimates in backend */
 export async function clearEstimates() {
-  const res = await fetch(`${API_URL}/api/estimates`, { method: "DELETE" });
+  const res = await authFetch(`${API_URL}/api/estimates`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to clear estimates");
   return res.json();
 }
