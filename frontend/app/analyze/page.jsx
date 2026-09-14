@@ -28,7 +28,7 @@ import {
   Calculator,
 } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 export default function AnalyzePage() {
   const router = useRouter();
   
@@ -76,7 +76,7 @@ export default function AnalyzePage() {
       const result = await response.json();
       setAnalysis(result);
       try {
-        localStorage.setItem("costlyai_latest_analysis", JSON.stringify(result));
+        localStorage.setItem("CostifyAI_latest_analysis", JSON.stringify(result));
       } catch {}
     } catch (err) {
       setError(err.message || "Failed to analyze project. Please try again.");

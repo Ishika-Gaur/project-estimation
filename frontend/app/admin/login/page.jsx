@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
 import { setToken, removeToken } from "@/lib/auth";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -71,7 +71,7 @@ export default function AdminLoginPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink text-ink-foreground shadow-sm">
               <span className="font-display text-xl font-bold">C</span>
             </div>
-            <span className="font-display text-2xl font-bold tracking-tight">CostlyAI</span>
+            <span className="font-display text-2xl font-bold tracking-tight">CostifyAI</span>
           </Link>
         </div>
 
@@ -108,7 +108,7 @@ export default function AdminLoginPage() {
                 required
                 value={form.email}
                 onChange={handleChange}
-                placeholder="admin@costlyai.com"
+                placeholder="admin@CostifyAI.com"
                 className="w-full rounded-lg border border-line bg-background px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent/20"
               />
             </div>

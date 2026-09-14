@@ -3,9 +3,9 @@ import { MarketingHeader } from "@/components/MarketingHeader";
 import { MarketingFooter } from "@/components/MarketingFooter";
 
 export const metadata = {
-  title: "About CostlyAI — Transparent Software Pricing & Execution",
+  title: "About CostifyAI — Transparent Software Pricing & Execution",
   description:
-    "CostlyAI turns project briefs and codebases into transparent INR cost estimates, module completion audits, and team workload plans.",
+    "CostifyAI turns project briefs and codebases into transparent INR cost estimates, module completion audits, and team workload plans.",
 };
 
 export default function About() {
@@ -22,12 +22,12 @@ export default function About() {
           <div className="rounded-xl border border-line bg-surface p-6 lg:col-span-7 space-y-4">
             <p className="text-base leading-relaxed text-foreground">
               Most clients hear a number before they understand what drives it, and most developers
-              quote before they have mapped the scope. CostlyAI bridges the gap: it reads requirements
+              quote before they have mapped the scope. CostifyAI bridges the gap: it reads requirements
               the way a senior architect would, splits them into discrete features, and prices each part
               of the build against live Indian market rates.
             </p>
             <p className="text-base leading-relaxed text-muted-foreground">
-              Unlike static rate sheets, CostlyAI incorporates continuous domestic rate telemetry
+              Unlike static rate sheets, CostifyAI incorporates continuous domestic rate telemetry
               (aggregated weekly from Indian freelance, Glassdoor, AmbitionBox, and PayScale data). It also
               connects to your real GitHub repositories to audit completion percentages and automatically
               distribute remaining backlog tasks to team members according to their roles and skills.

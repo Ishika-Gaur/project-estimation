@@ -4,7 +4,7 @@ import { MarketingFooter } from "@/components/MarketingFooter";
 import { FEATURES } from "@/lib/marketing-content";
 
 export const metadata = {
-  title: "Features — CostlyAI Estimation Capabilities",
+  title: "Features — CostifyAI Estimation Capabilities",
   description:
     "AI requirement analysis, cost estimation, timeline forecasting, complexity scoring, stack recommendations and feature breakdowns.",
 };

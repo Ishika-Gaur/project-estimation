@@ -1,10 +1,10 @@
 /**
- * auth.js — JWT token helpers for CostlyAI
+ * auth.js — JWT token helpers for CostifyAI
  * Stores tokens in localStorage for client-side auth state.
  */
 
-const TOKEN_KEY = "costlyai_token";
-const REFRESH_TOKEN_KEY = "costlyai_refresh_token";
+const TOKEN_KEY = "CostifyAI_token";
+const REFRESH_TOKEN_KEY = "CostifyAI_refresh_token";
 
 /** Store the JWT tokens */
 export function setToken(token, refreshToken = null) {
@@ -105,7 +105,7 @@ export async function authFetch(url, options = {}) {
     const refreshToken = getRefreshToken();
     if (refreshToken) {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
+        const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
         const refreshResponse = await fetch(`${API}/auth/refresh`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

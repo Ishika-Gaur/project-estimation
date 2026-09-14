@@ -50,7 +50,7 @@ export function MarketingHeader() {
             C
           </span>
           <span className="truncate font-display text-lg font-semibold tracking-tight text-foreground">
-            CostlyAI
+            CostifyAI
           </span>
           <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:inline">
             v1.0

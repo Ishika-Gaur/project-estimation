@@ -625,7 +625,7 @@ export default function AdminPage() {
               <span className="font-display text-lg font-bold text-ink-foreground">C</span>
             </div>
             <div>
-              <span className="font-display text-lg font-bold tracking-tight">CostlyAI</span>
+              <span className="font-display text-lg font-bold tracking-tight">CostifyAI</span>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <ShieldCheck className="size-3 text-accent" />
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">Admin Console</span>

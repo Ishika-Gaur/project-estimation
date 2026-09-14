@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { KeyRound, AlertCircle, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
         {/* Logo */}
         <Link href="/" className="auth-logo">
           <span className="auth-logo-icon">C</span>
-          <span className="auth-logo-name">CostlyAI</span>
+          <span className="auth-logo-name">CostifyAI</span>
         </Link>
 
         {/* Card */}

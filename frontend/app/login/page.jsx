@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LogIn, AlertCircle, Loader2 } from "lucide-react";
 import { setToken, removeToken } from "@/lib/auth";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -67,7 +67,7 @@ export default function LoginPage() {
         {/* Logo */}
         <Link href="/" className="auth-logo">
           <span className="auth-logo-icon">C</span>
-          <span className="auth-logo-name">CostlyAI</span>
+          <span className="auth-logo-name">CostifyAI</span>
         </Link>
 
         {/* Card */}
@@ -78,7 +78,7 @@ export default function LoginPage() {
               <LogIn className="auth-icon" />
             </div>
             <h1 className="auth-title">Welcome back</h1>
-            <p className="auth-subtitle">Sign in to your CostlyAI account</p>
+            <p className="auth-subtitle">Sign in to your CostifyAI account</p>
           </div>
 
           {/* Error banner */}

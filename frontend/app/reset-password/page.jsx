@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Lock, AlertCircle, Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 
 function PasswordStrength({ password }) {
   const checks = [
@@ -100,7 +100,7 @@ function ResetPasswordForm() {
         <div className="auth-wrapper">
           <Link href="/" className="auth-logo">
             <span className="auth-logo-icon">C</span>
-            <span className="auth-logo-name">CostlyAI</span>
+            <span className="auth-logo-name">CostifyAI</span>
           </Link>
           <div className="auth-card rise">
             <div className="auth-card-head">
@@ -138,7 +138,7 @@ function ResetPasswordForm() {
         {/* Logo */}
         <Link href="/" className="auth-logo">
           <span className="auth-logo-icon">C</span>
-          <span className="auth-logo-name">CostlyAI</span>
+          <span className="auth-logo-name">CostifyAI</span>
         </Link>
 
         {/* Card */}

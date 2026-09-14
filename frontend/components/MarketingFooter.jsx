@@ -8,7 +8,7 @@ export function MarketingFooter() {
           <span className="grid size-7 shrink-0 place-items-center rounded-md bg-ink font-display text-xs font-bold text-ink-foreground">
             C
           </span>
-          <span className="font-display text-sm font-semibold text-foreground">CostlyAI</span>
+          <span className="font-display text-sm font-semibold text-foreground">CostifyAI</span>
         </div>
         <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
           Project cost intelligence · Estimates in ₹

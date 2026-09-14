@@ -25,7 +25,7 @@ import {
   Search,
 } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 
 const DEFAULT_TEAM_SIZE = 3;
 const TEAM_SIZE_OPTIONS = Array.from({ length: 10 }, (_, i) => i + 1);
@@ -139,7 +139,7 @@ export default function TaskDistributionPage() {
   // Load latest analysis on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("costlyai_latest_analysis");
+      const stored = localStorage.getItem("CostifyAI_latest_analysis");
       if (stored) {
         setAnalysis(JSON.parse(stored));
       } else {
@@ -186,7 +186,7 @@ export default function TaskDistributionPage() {
     setAnalysis(proj);
     setTaskPlan(null);
     setShowProjectPicker(false);
-    localStorage.setItem("costlyai_latest_analysis", JSON.stringify(proj));
+    localStorage.setItem("CostifyAI_latest_analysis", JSON.stringify(proj));
   };
 
   const handleGenerateTaskPlan = async () => {

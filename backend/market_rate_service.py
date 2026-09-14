@@ -91,7 +91,7 @@ def _derive_bands(ranges: list[tuple[int, int]]) -> dict:
 async def collect_sources() -> list[dict]:
     """Collect only publicly exposed INR/hour ranges; failures are skipped."""
     collected = []
-    async with httpx.AsyncClient(timeout=20, follow_redirects=True, headers={"User-Agent": "CostlyAI-market-rates/1.0"}) as client:
+    async with httpx.AsyncClient(timeout=20, follow_redirects=True, headers={"User-Agent": "CostifyAI-market-rates/1.0"}) as client:
         for source in SOURCES:
             try:
                 response = await client.get(source["url"])
@@ -168,7 +168,7 @@ async def weekly_rate_updater(db):
             if not updated_at or _now() - updated_at >= UPDATE_INTERVAL:
              await update_market_rates(db)
         except Exception as exc:
-            print(f"[CostlyAI] Market-rate update failed: {exc}")
+            print(f"[CostifyAI] Market-rate update failed: {exc}")
         await asyncio.sleep(24 * 60 * 60)
 
 

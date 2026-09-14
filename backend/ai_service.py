@@ -30,7 +30,7 @@ async def _call_gemini_with_fallback(body: dict, primary_model: str, api_key: st
                         content = response.json()["candidates"][0]["content"]["parts"][0]["text"]
                         return json.loads(content)
 
-                    print(f"[CostlyAI] Gemini ({current_model}) returned HTTP {response.status_code}: {response.text[:180]}")
+                    print(f"[CostifyAI] Gemini ({current_model}) returned HTTP {response.status_code}: {response.text[:180]}")
                     if response.status_code in {429, 404, 503}:
                         break
                     elif response.status_code in {500, 502, 504}:
@@ -38,7 +38,7 @@ async def _call_gemini_with_fallback(body: dict, primary_model: str, api_key: st
                     else:
                         response.raise_for_status()
                 except (KeyError, IndexError, json.JSONDecodeError) as exc:
-                    print(f"[CostlyAI] Parse error with {current_model}: {exc}")
+                    print(f"[CostifyAI] Parse error with {current_model}: {exc}")
                     last_exc = exc
                     break
                 except Exception as exc:

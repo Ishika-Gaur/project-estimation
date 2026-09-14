@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, UserPlus, AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
 import { setToken } from "@/lib/auth";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 
 function PasswordStrength({ password }) {
   const checks = [
@@ -95,7 +95,7 @@ export default function SignupPage() {
         {/* Logo */}
         <Link href="/" className="auth-logo">
           <span className="auth-logo-icon">C</span>
-          <span className="auth-logo-name">CostlyAI</span>
+          <span className="auth-logo-name">CostifyAI</span>
         </Link>
 
         {/* Card */}

@@ -119,7 +119,7 @@ export default function Home() {
               From initial estimate to sprint assignment.
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              CostlyAI connects three essential engineering workflows into a seamless delivery pipeline.
+              CostifyAI connects three essential engineering workflows into a seamless delivery pipeline.
             </p>
           </div>
 

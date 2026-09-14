@@ -20,7 +20,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata = {
-  title: "CostlyAI — AI-Powered Project Cost Estimator",
+  title: "CostifyAI — AI-Powered Project Cost Estimator",
   description:
     "Describe your project requirements and let AI estimate the development cost, timeline, complexity and recommended tech stack in rupees.",
   icons: {

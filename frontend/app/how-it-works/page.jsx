@@ -4,7 +4,7 @@ import { MarketingFooter } from "@/components/MarketingFooter";
 import { STEPS } from "@/lib/marketing-content";
 
 export const metadata = {
-  title: "How It Works — CostlyAI Project Cost & Sprint Engine",
+  title: "How It Works — CostifyAI Project Cost & Sprint Engine",
   description:
     "Four steps: describe or connect your repo, get live market-calibrated estimates, audit completion, and distribute tasks to your team.",
 };

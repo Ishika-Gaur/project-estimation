@@ -15,9 +15,9 @@ from datetime import datetime, timezone
 load_dotenv()
 
 # ── Hardcoded Admin Credentials ───────────────────────────────────────────────
-ADMIN_EMAIL    = "admin@costlyai.com"
+ADMIN_EMAIL    = "admin@CostifyAI.com"
 ADMIN_PASSWORD = "Admin@1234"
-ADMIN_NAME     = "CostlyAI Admin"
+ADMIN_NAME     = "CostifyAI Admin"
 
 from auth import router as auth_router, limiter
 from estimate_router import router as estimate_router
@@ -84,20 +84,20 @@ async def seed_admin():
                 "role": "admin",
                 "created_at": datetime.now(timezone.utc),
             })
-            print(f"[CostlyAI] Admin account created → {ADMIN_EMAIL}")
+            print(f"[CostifyAI] Admin account created → {ADMIN_EMAIL}")
         else:
             # Always ensure the existing account has admin role
             await db.users.update_one(
                 {"email": ADMIN_EMAIL.lower()},
                 {"$set": {"role": "admin"}}
             )
-            print(f"[CostlyAI] Admin account verified → {ADMIN_EMAIL}")
+            print(f"[CostifyAI] Admin account verified → {ADMIN_EMAIL}")
     except Exception as e:
-        print(f"[CostlyAI] Warning: Could not seed admin on startup ({e}). Will retry on first request.")
+        print(f"[CostifyAI] Warning: Could not seed admin on startup ({e}). Will retry on first request.")
 
     # Start the weekly market-rate updater in the background
     asyncio.create_task(weekly_rate_updater(db))
-    print("[CostlyAI] Market-rate background updater started.")
+    print("[CostifyAI] Market-rate background updater started.")
 
 
 @app.get("/")

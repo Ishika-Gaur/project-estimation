@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CostlyAI design system — "Diagonal terminal".
+ * CostifyAI design system — "Diagonal terminal".
  * Light canvas, mono-forward micro type, single orange accent.
  * All colors are oklch tokens registered in @theme inline.
  */

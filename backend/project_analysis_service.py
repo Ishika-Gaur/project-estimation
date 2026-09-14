@@ -31,7 +31,7 @@ async def _call_gemini_with_fallback(body: dict, primary_model: str, api_key: st
                         content = response.json()["candidates"][0]["content"]["parts"][0]["text"]
                         return json.loads(content)
 
-                    print(f"[CostlyAI] Gemini ({current_model}) returned HTTP {response.status_code}: {response.text[:180]}")
+                    print(f"[CostifyAI] Gemini ({current_model}) returned HTTP {response.status_code}: {response.text[:180]}")
                     if response.status_code in {429, 404, 503}:
                         # Rate limited or temporarily overloaded - switch model immediately
                         break
@@ -40,7 +40,7 @@ async def _call_gemini_with_fallback(body: dict, primary_model: str, api_key: st
                     else:
                         response.raise_for_status()
                 except (KeyError, IndexError, json.JSONDecodeError) as exc:
-                    print(f"[CostlyAI] Parse error with {current_model}: {exc}")
+                    print(f"[CostifyAI] Parse error with {current_model}: {exc}")
                     last_exc = exc
                     break
                 except Exception as exc:
@@ -395,6 +395,6 @@ async def generate_task_plan(analysis: ProjectAnalysisResult, work_type: str = "
     try:
         return await _call_gemini_with_fallback(body, model, api_key)
     except Exception as exc:
-        print(f"[CostlyAI] Task-plan generation failed: {type(exc).__name__}: {exc}")
+        print(f"[CostifyAI] Task-plan generation failed: {type(exc).__name__}: {exc}")
         raise RuntimeError(f"Task plan generation failed: {exc}") from exc
 

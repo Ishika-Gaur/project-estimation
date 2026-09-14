@@ -27,8 +27,8 @@ export function AppShell({
       }
     };
     sync();
-    window.addEventListener("costlyai:estimates", sync);
-    return () => window.removeEventListener("costlyai:estimates", sync);
+    window.addEventListener("CostifyAI:estimates", sync);
+    return () => window.removeEventListener("CostifyAI:estimates", sync);
   }, []);
 
   return (
