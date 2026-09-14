@@ -229,11 +229,11 @@ If an API call hits a `429 (Rate Limit)` or `503`, the client immediately cascad
 
 ## 🚀 Deployment
 
-- **Backend**: Ready to deploy on platforms like [Render](https://render.com), [Fly.io](https://fly.io), or [Railway](https://railway.app). CORS settings in `main.py` already support `*.onrender.com` domains out of the box.
-- **Frontend**: Optimally deployed to [Vercel](https://vercel.com) or [Netlify](https://netlify.com). Set `NEXT_PUBLIC_API_URL` to your production backend URL in the deployment environment variables.
+frontend - https://project-estimation-3ejl.onrender.com
+
+backend - https://project-estimation-backend-fp5x.onrender.com
+
 
 ---
 
-## 📄 License
 
-This project is licensed under the **MIT License**.
