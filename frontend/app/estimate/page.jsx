@@ -52,7 +52,7 @@ export default function EstimatePage() {
   const [description, setDescription] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [deployedUrl, setDeployedUrl] = useState("");
-  const [tags, setTags] = useState(["Next.js", "Authentication"]);
+  const [tags, setTags] = useState([]);
   const [customTagInput, setCustomTagInput] = useState("");
   const [platforms, setPlatforms] = useState(["Web"]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -137,7 +137,7 @@ export default function EstimatePage() {
     setDescription("");
     setGithubUrl("");
     setDeployedUrl("");
-    setTags(["Next.js", "Authentication"]);
+    setTags([]);
     setPlatforms(["Web"]);
     setCurrentEstimate(null);
     setErrorMessage("");

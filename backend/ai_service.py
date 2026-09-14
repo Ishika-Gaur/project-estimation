@@ -232,12 +232,20 @@ def _apply_india_market_pricing(payload: EstimateInput, analysis: AIAnalysis, ma
 
     hours = max(1, analysis.timeline.hours)
 
-    if analysis.complexity.level == "Simple":
-        hours = min(hours, 24)
+    desc = (payload.description or "").lower()
+    is_simple_frontend = (
+        ("only frontend" in desc or "frontend only" in desc or "just frontend" in desc or "portfolio" in desc or "landing page" in desc or "static" in desc)
+        and not any(term in desc for term in ["backend", "database", "full stack", "fullstack", "ecommerce", "e-commerce"])
+    )
+    if is_simple_frontend:
+        hours = min(hours, 10)
+        hours = max(hours, 6)
+    elif analysis.complexity.level == "Simple":
+        hours = min(hours, 20)
     elif analysis.complexity.level == "Medium":
-        hours = min(hours, 60)
+        hours = min(hours, 50)
     elif analysis.complexity.level == "Complex":
-           hours = min(hours, 150)
+        hours = min(hours, 120)
 
     # Build the explanation with market metadata
     rate_basis = "current Indian market benchmarks" if source_info.get("status") == "active" else "default Indian market benchmarks"
@@ -269,7 +277,12 @@ def _apply_india_market_pricing(payload: EstimateInput, analysis: AIAnalysis, ma
         currency="INR",
         explanation=" ".join(explanation_parts),
     )
-    return analysis.model_copy(update={"pricing": pricing})
+    updated_timeline = analysis.timeline.model_copy(update={
+        "hours": hours,
+        "days": max(1, round(hours / 6)),
+        "weeks": round(max(0.5, hours / 30), 1),
+    })
+    return analysis.model_copy(update={"pricing": pricing, "timeline": updated_timeline})
 
 
 def _gemini_response_schema(schema: dict) -> dict:
@@ -320,45 +333,28 @@ async def analyze_project(payload: EstimateInput, db=None) -> AIAnalysis:
             pass  # DB unavailable — will use SEED_BANDS fallback
 
     system_prompt = (
-    "You are a senior software architect and project cost estimator for the Indian market. "
-    "Understand English, Hindi, Hinglish, and mixed-language requirements. "
-
-    "IMPORTANT: Estimate ONLY what the user actually asks for. "
-    "Do not assume extra development work. "
-    "Do not turn a small contribution into a complete project estimate. "
-
-    "FIRST identify the actual work requested from the user's description, selected features, "
-    "GitHub URL, and deployed URL. "
-
-    "The work may be one or more of: "
-    "frontend development, backend development, database work, API integration, "
-    "AI integration, authentication, payment integration, bug fixing, feature addition, "
-    "optimization, testing, or deployment. "
-
-    "If the user asks only for frontend work, do NOT estimate backend, database, or API work. "
-    "If the user asks only for backend logic, do NOT estimate frontend development. "
-    "If the user asks only to integrate AI into an existing project, estimate only the AI integration "
-    "and related necessary work. "
-    "If the user asks to fix an existing feature, estimate the fix, not the whole application. "
-    "If the user asks to add one feature to an existing application, estimate only that feature "
-    "and its necessary supporting work. "
-
-    "A GitHub URL or deployed URL means an existing project may already exist. "
-    "Do NOT assume the entire project needs to be rebuilt. "
-
-    "For a simple frontend portfolio or landing page, keep the hours and price small and "
-    "appropriate to the actual scope. "
-
-    "Use the user's selected features only when they are actually relevant to the requested work. "
-    "Do not add features that the user did not request. "
-
-    "Keep estimated hours proportional to the actual work. "
-    "Keep hours, timeline, complexity, and pricing internally consistent. "
-
-    "Return realistic INR estimates. "
-    "Complexity must be Simple, Medium, Complex, or Enterprise. "
-    "Never claim live web research."
-)
+        "You are a senior software architect and project cost estimator for the Indian market. "
+        "Understand English, Hindi, Hinglish, and mixed-language requirements.\n\n"
+        "IMPORTANT: Estimate ONLY what the user actually asks for. "
+        "Do not assume extra development work. "
+        "Do not turn a small contribution into a complete project estimate.\n\n"
+        "CRITICAL WORK_SCOPE RULES:\n"
+        "1. USER DESCRIPTION TAKES TOP PRIORITY: If the user description states 'only frontend', 'frontend only', 'just frontend', "
+        "'portfolio', or 'landing page', you MUST set:\n"
+        "   - work_scope.frontend = true\n"
+        "   - work_scope.backend = false\n"
+        "   - work_scope.database = false\n"
+        "   - work_scope.api_integration = false\n"
+        "   - work_scope.ai_integration = false\n"
+        "   - work_scope.testing = true\n"
+        "   - work_scope.deployment = true\n"
+        "   Do NOT include API Integration, backend APIs, or database in the scope or breakdown.\n"
+        "2. If the user asks only for backend logic, do NOT estimate frontend development.\n"
+        "3. If the user asks only to integrate AI into an existing project, estimate only the AI integration.\n"
+        "4. A GitHub URL or deployed URL means an existing project may already exist. Do NOT assume the entire project needs to be rebuilt.\n"
+        "5. For a simple frontend portfolio or landing page, keep the hours small (6–12 hours total, 1–2 days) and complexity 'Simple'.\n"
+        "6. Return realistic INR estimates. Complexity must be Simple, Medium, Complex, or Enterprise. Never claim live web research."
+    )
     model = os.getenv("AI_MODEL", "gemini-3.5-flash")
     body = {
         "systemInstruction": {"parts": [{"text": system_prompt}]},
@@ -372,6 +368,24 @@ async def analyze_project(payload: EstimateInput, db=None) -> AIAnalysis:
     try:
         content_dict = await _call_gemini_with_fallback(body, model, api_key)
         analysis = AIAnalysis.model_validate(content_dict)
+
+        # Enforce deterministic work_scope if description explicitly requests frontend-only / portfolio
+        desc = (payload.description or "").lower()
+        is_frontend_only = (
+            ("only frontend" in desc or "frontend only" in desc or "just frontend" in desc or "no backend" in desc)
+            and not any(term in desc for term in ["backend logic", "with backend", "fullstack", "full stack"])
+        )
+        if is_frontend_only and analysis.work_scope:
+            analysis.work_scope.frontend = True
+            analysis.work_scope.backend = False
+            analysis.work_scope.database = False
+            analysis.work_scope.api_integration = False
+            analysis.work_scope.ai_integration = False
+            analysis.work_scope.testing = True
+            analysis.work_scope.deployment = True
+            analysis.complexity.level = "Simple"
+            analysis.complexity.score = min(analysis.complexity.score, 3)
+
         return _apply_india_market_pricing(payload, analysis, market_snapshot)
     except Exception as exc:
         raise RuntimeError(f"The AI provider returned an invalid or unavailable response: {exc}") from exc

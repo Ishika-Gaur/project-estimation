@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api", tags=["estimates"])
 
 
 SCOPE_ITEMS = [
-    ("frontend", "Frontend Development", 0.35),
+    ("frontend", "Frontend Development", 0.50),
     ("backend", "Backend Development", 0.30),
     ("database", "Database Architecture", 0.15),
     ("api_integration", "API Integration", 0.15),
