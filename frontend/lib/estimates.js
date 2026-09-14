@@ -1,3 +1,5 @@
+import { authFetch } from "./auth";
+
 export const PROJECT_TYPES = [
   "Website",
   "Web Application",
@@ -74,8 +76,6 @@ export const SUGGESTED_FEATURES = [
 /* ------------------------------------------------------------------ */
 /* Backend API calls (replaces old localStorage logic)                */
 /* ------------------------------------------------------------------ */
-
-import { authFetch } from "./auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 /** Calls backend to generate + save an estimate */

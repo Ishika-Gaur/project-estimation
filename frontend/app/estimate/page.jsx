@@ -96,28 +96,38 @@ export default function EstimatePage() {
     setErrorMessage("");
     setIsCalculating(true);
 
-    try {
-      const input = {
-        projectName: projectName.trim() || "Untitled Project",
-        buyerType, // drives pricing tier/multiplier
-        audience, // drives scale/infra assumptions
-        description,
-        github_url: githubUrl.trim(),
-        deployed_url: deployedUrl.trim(),
-        features: tags,
-        platforms,
-      };
+    const input = {
+      projectName: projectName.trim() || "Untitled Project",
+      buyerType, // drives pricing tier/multiplier
+      audience, // drives scale/infra assumptions
+      description,
+      github_url: githubUrl.trim(),
+      deployed_url: deployedUrl.trim(),
+      features: tags,
+      platforms,
+    };
 
-      const est = await generateEstimate(input);
-      setCurrentEstimate(est);
-      setPastEstimates(await listEstimates());
-      setFormOpen(false); // collapse the "duplicate-looking" form after a result exists
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (error) {
-      setErrorMessage(error.message || "Unable to generate an estimate. Please try again.");
-    } finally {
-      setIsCalculating(false);
+    // Retry once on network failure (handles Render free-tier cold starts)
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const est = await generateEstimate(input);
+        setCurrentEstimate(est);
+        setPastEstimates(await listEstimates());
+        setFormOpen(false);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        setIsCalculating(false);
+        return;
+      } catch (error) {
+        if (attempt === 0 && error.message === "Failed to fetch") {
+          // Backend likely waking up — wait 3s and retry
+          setErrorMessage("Server is waking up… retrying automatically.");
+          await new Promise((r) => setTimeout(r, 3000));
+          continue;
+        }
+        setErrorMessage(error.message || "Unable to generate an estimate. Please try again.");
+      }
     }
+    setIsCalculating(false);
   };
 
   const handleReset = () => {
