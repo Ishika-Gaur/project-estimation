@@ -46,7 +46,7 @@ export function EstimateReport({ estimate }) {
             {estimate.complexity}
           </div>
           <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-            {estimate.input.projectType}
+            {estimate.project_category || estimate.input.projectType}
           </div>
         </div>
       </div>

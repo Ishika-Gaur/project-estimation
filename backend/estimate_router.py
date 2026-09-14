@@ -38,23 +38,38 @@ def _legacy_estimate(payload: EstimateInput, analysis: dict, user: dict | None =
     all_features = features.get("mvp", []) + features.get("advanced", []) + features.get("optional", [])
     scope = analysis.get("work_scope") or {}
 
-    active = []
-    for key, label, weight in SCOPE_ITEMS:
-        if scope.get(key):
-            active.append((label, weight))
-
-    if not active:
-        active = DEFAULT_BREAKDOWN
-
-    total_weight = sum(w for _, w in active)
-    breakdown = [(label, round(w / total_weight, 3)) for label, w in active]
-
     pricing = analysis.get("pricing", {})
     typical = pricing.get("typical", 15000)
     budget = pricing.get("budget", round(typical * 0.8))
     premium = pricing.get("premium", round(typical * 1.3))
     timeline = analysis.get("timeline", {"weeks": 2, "hours": 40})
     created_at = datetime.now(timezone.utc)
+
+    custom_breakdown = analysis.get("custom_breakdown")
+    if custom_breakdown and len(custom_breakdown) >= 2:
+        total_p = sum(item.get("percentage", 0) for item in custom_breakdown) or 100
+        breakdown_items = [
+            {
+                "label": item.get("label"),
+                "min": round(budget * (item.get("percentage", 0) / total_p)),
+                "max": round(premium * (item.get("percentage", 0) / total_p)),
+            }
+            for item in custom_breakdown
+        ]
+    else:
+        active = []
+        for key, label, weight in SCOPE_ITEMS:
+            if scope.get(key):
+                active.append((label, weight))
+
+        if not active:
+            active = DEFAULT_BREAKDOWN
+
+        total_weight = sum(w for _, w in active)
+        breakdown_items = [
+            {"label": label, "min": round(budget * (w / total_weight)), "max": round(premium * (w / total_weight))}
+            for label, w in active
+        ]
     return {
         "id": f"est_{int(time.time() * 1000):x}{uuid.uuid4().hex[:6]}",
         "createdAt": created_at.isoformat().replace("+00:00", "Z"),
@@ -72,10 +87,7 @@ def _legacy_estimate(payload: EstimateInput, analysis: dict, user: dict | None =
         "weeksMin": max(1, round(timeline.get("weeks", 2) * 0.8)),
         "weeksMax": max(1, round(timeline.get("weeks", 2) * 1.2)),
         "complexity": analysis.get("complexity", {}).get("level", "Medium"),
-        "breakdown": [
-            {"label": label, "min": round(budget * share), "max": round(premium * share)}
-            for label, share in breakdown
-        ],
+        "breakdown": breakdown_items,
         "detectedFeatures": [item.get("name", "") for item in all_features],
         "stack": [
             {"layer": item.get("layer", ""), "value": item.get("recommendation", "")}

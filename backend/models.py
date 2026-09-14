@@ -83,12 +83,19 @@ class WorkScope(BaseModel):
     deployment: bool = True
 
 
+class BreakdownItem(BaseModel):
+    label: str
+    percentage: int
+    explanation: Optional[str] = ""
+
+
 class AIAnalysis(BaseModel):
     project_category: str
     summary: str
     requirements: List[str]
     missing_or_unclear: List[str]
     work_scope: Optional[WorkScope] = None
+    custom_breakdown: Optional[List[BreakdownItem]] = None
     features: FeatureBuckets
     technology: List[TechnologyRecommendation]
     complexity: ComplexityAnalysis
