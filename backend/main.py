@@ -38,6 +38,20 @@ async def mongo_error_handler(request: Request, exc: PyMongoError):
         content={"detail": "Database is unavailable. Check the MongoDB connection and try again."},
     )
 
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    origin = request.headers.get("origin", "")
+    cors_origin = origin if (".onrender.com" in origin or "localhost" in origin) else "https://project-estimation-3ejl.onrender.com"
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal Server Error: {str(exc)}"},
+        headers={
+            "Access-Control-Allow-Origin": cors_origin,
+            "Access-Control-Allow-Credentials": "true",
+        },
+    )
+
 # Add CORS middleware BEFORE including routers
 app.add_middleware(
     CORSMiddleware,
@@ -45,6 +59,7 @@ app.add_middleware(
         "http://localhost:3000",
         "https://project-estimation-3ejl.onrender.com",
     ],
+    allow_origin_regex=r"https://.*\.onrender\.com",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

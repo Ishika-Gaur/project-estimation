@@ -12,43 +12,48 @@ from models import EstimateInput
 router = APIRouter(prefix="/api", tags=["estimates"])
 
 
+SCOPE_ITEMS = [
+    ("frontend", "Frontend Development", 0.35),
+    ("backend", "Backend Development", 0.30),
+    ("database", "Database Architecture", 0.15),
+    ("api_integration", "API Integration", 0.15),
+    ("ai_integration", "AI Integration", 0.20),
+    ("bug_fixing", "Bug Fixing & Optimization", 0.20),
+    ("feature_addition", "Feature Implementation", 0.25),
+    ("testing", "Testing & QA", 0.10),
+    ("deployment", "Deployment & DevOps", 0.10),
+]
+
+DEFAULT_BREAKDOWN = [
+    ("Frontend Development", 0.32),
+    ("Backend Development", 0.28),
+    ("Database", 0.12),
+    ("API Integrations", 0.17),
+    ("Testing & Deployment", 0.11),
+]
+
+
 def _legacy_estimate(payload: EstimateInput, analysis: dict, user: dict | None = None) -> dict:
-    features = analysis["features"]
-    all_features = features["mvp"] + features["advanced"] + features["optional"]
-    scope = analysis.get("work_scope", {})
+    features = analysis.get("features", {})
+    all_features = features.get("mvp", []) + features.get("advanced", []) + features.get("optional", [])
+    scope = analysis.get("work_scope") or {}
 
-    breakdown = []
+    active = []
+    for key, label, weight in SCOPE_ITEMS:
+        if scope.get(key):
+            active.append((label, weight))
 
-    if scope.get("frontend"):
-     breakdown.append("Frontend Development")
+    if not active:
+        active = DEFAULT_BREAKDOWN
 
-     if scope.get("backend"):
-      breakdown.append("Backend Development")
+    total_weight = sum(w for _, w in active)
+    breakdown = [(label, round(w / total_weight, 3)) for label, w in active]
 
-     if scope.get("database"):
-       breakdown.append("Database")
-
-     if scope.get("api_integration"):
-      breakdown.append("API Integration")
-
-    if scope.get("ai_integration"):
-     breakdown.append("AI Integration")
-
-    if scope.get("bug_fixing"):
-     breakdown.append("Bug Fixing")
-
-    if scope.get("feature_addition"):
-     breakdown.append("Feature Addition")
-
-    if scope.get("testing"):
-     breakdown.append("Testing")
-
-    if scope.get("deployment"):
-     breakdown.append("Deployment")
-     typical = analysis["pricing"]["typical"]
-    budget = analysis["pricing"]["budget"]
-    premium = analysis["pricing"]["premium"]
-    timeline = analysis["timeline"]
+    pricing = analysis.get("pricing", {})
+    typical = pricing.get("typical", 15000)
+    budget = pricing.get("budget", round(typical * 0.8))
+    premium = pricing.get("premium", round(typical * 1.3))
+    timeline = analysis.get("timeline", {"weeks": 2, "hours": 40})
     created_at = datetime.now(timezone.utc)
     return {
         "id": f"est_{int(time.time() * 1000):x}{uuid.uuid4().hex[:6]}",
@@ -57,26 +62,26 @@ def _legacy_estimate(payload: EstimateInput, analysis: dict, user: dict | None =
         "updatedAt": created_at.isoformat().replace("+00:00", "Z"),
         "status": "completed",
         "user_email": user.get("email") if user else None,
-        "project_category": analysis["project_category"],
-        "pricing": analysis["pricing"],
-        "timeline": analysis["timeline"],
-        "technology": [item["recommendation"] for item in analysis["technology"]],
+        "project_category": analysis.get("project_category", "Custom Web Project"),
+        "pricing": pricing,
+        "timeline": timeline,
+        "technology": [item.get("recommendation", "") for item in analysis.get("technology", [])],
         "input": payload.model_dump(),
         "costMin": budget,
         "costMax": premium,
-        "weeksMin": max(1, round(timeline["weeks"] * 0.8)),
-        "weeksMax": max(1, round(timeline["weeks"] * 1.2)),
-        "complexity": analysis["complexity"]["level"],
+        "weeksMin": max(1, round(timeline.get("weeks", 2) * 0.8)),
+        "weeksMax": max(1, round(timeline.get("weeks", 2) * 1.2)),
+        "complexity": analysis.get("complexity", {}).get("level", "Medium"),
         "breakdown": [
             {"label": label, "min": round(budget * share), "max": round(premium * share)}
             for label, share in breakdown
         ],
-        "detectedFeatures": [item["name"] for item in all_features],
+        "detectedFeatures": [item.get("name", "") for item in all_features],
         "stack": [
-            {"layer": item["layer"], "value": item["recommendation"]}
-            for item in analysis["technology"]
+            {"layer": item.get("layer", ""), "value": item.get("recommendation", "")}
+            for item in analysis.get("technology", [])
         ],
-        "analysis": analysis["summary"],
+        "analysis": analysis.get("summary", ""),
         "aiAnalysis": analysis,
         "pricingTypical": typical,
     }
@@ -84,7 +89,7 @@ def _legacy_estimate(payload: EstimateInput, analysis: dict, user: dict | None =
 
 @router.post("/estimate")
 async def create_estimate(payload: EstimateInput, request: Request, user=Depends(get_optional_user)):
-    if not payload.description.strip() and not payload.features:
+    if not (payload.description or "").strip() and not payload.features:
         raise HTTPException(status_code=422, detail="Describe the project or add at least one feature.")
     try:
         analysis = await analyze_project(payload, db=request.app.state.db)
@@ -94,8 +99,14 @@ async def create_estimate(payload: EstimateInput, request: Request, user=Depends
         except Exception:
             pass
         return estimate
+    except HTTPException:
+        raise
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to generate estimate: {str(exc)}") from exc
 
 
 @router.get("/estimates")

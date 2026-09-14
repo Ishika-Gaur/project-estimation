@@ -71,11 +71,24 @@ class MarketAnalysis(BaseModel):
     notes: str
 
 
+class WorkScope(BaseModel):
+    frontend: bool = True
+    backend: bool = True
+    database: bool = True
+    api_integration: bool = True
+    ai_integration: bool = False
+    bug_fixing: bool = False
+    feature_addition: bool = False
+    testing: bool = True
+    deployment: bool = True
+
+
 class AIAnalysis(BaseModel):
     project_category: str
     summary: str
     requirements: List[str]
     missing_or_unclear: List[str]
+    work_scope: Optional[WorkScope] = None
     features: FeatureBuckets
     technology: List[TechnologyRecommendation]
     complexity: ComplexityAnalysis

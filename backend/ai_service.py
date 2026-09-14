@@ -121,11 +121,13 @@ ANALYSIS_SCHEMA = {
         },
 
         "suggestions": {"type": "array", "items": {"$ref": "#/$defs/suggestion"}},
+        "work_scope": {"$ref": "#/$defs/work_scope"},
     },
 
     "required": [
         "project_category", "summary", "requirements", "missing_or_unclear", "features",
         "technology", "complexity", "timeline", "pricing", "market_analysis", "suggestions",
+        "work_scope",
     ],
 
     "$defs": {
