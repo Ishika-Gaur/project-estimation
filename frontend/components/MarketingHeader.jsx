@@ -46,12 +46,7 @@ export function MarketingHeader() {
     <header className="sticky top-0 z-30 border-b border-line bg-background/85 backdrop-blur-sm">
       <div className="mx-auto grid h-16 max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 sm:px-6">
         <Link href="/" className="flex min-w-0 items-center gap-2.5">
-          <span className="grid size-8 shrink-0 place-items-center rounded-md bg-ink font-display text-sm font-bold text-ink-foreground">
-            C
-          </span>
-          <span className="truncate font-display text-lg font-semibold tracking-tight text-foreground">
-            CostifyAI
-          </span>
+          <img src="/logo.png" alt="CostifyAI" className="h-8 w-auto" />
           <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:inline">
             v1.0
           </span>

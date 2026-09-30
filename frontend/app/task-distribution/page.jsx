@@ -5,7 +5,8 @@ import Link from "next/link";
 import { MarketingHeader } from "@/components/MarketingHeader";
 import { MarketingFooter } from "@/components/MarketingFooter";
 import { AppShell } from "@/components/AppShell";
-import { authFetch } from "@/lib/auth";
+import { authFetch, isLoggedIn } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 import {
   Users,
   Target,
@@ -115,6 +116,14 @@ function TaskRow({ task, index }) {
 }
 
 export default function TaskDistributionPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push("/login");
+    }
+  }, [router]);
+
   // Project Analysis State
   const [analysis, setAnalysis] = useState(null);
   const [savedAnalyses, setSavedAnalyses] = useState([]);

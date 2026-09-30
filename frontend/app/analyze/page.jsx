@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MarketingHeader } from "@/components/MarketingHeader";
 import { MarketingFooter } from "@/components/MarketingFooter";
 import { AppShell } from "@/components/AppShell";
-import { authFetch } from "@/lib/auth";
+import { authFetch, isLoggedIn } from "@/lib/auth";
 import {
   Sparkles,
   Github,
@@ -31,6 +31,12 @@ import {
 const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 export default function AnalyzePage() {
   const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push("/login");
+    }
+  }, [router]);
   
   // Form state
   const [description, setDescription] = useState("");

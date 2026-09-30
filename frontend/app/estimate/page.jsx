@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { isLoggedIn } from "@/lib/auth";
 import { MarketingHeader } from "@/components/MarketingHeader";
 import { MarketingFooter } from "@/components/MarketingFooter";
 import { AppShell } from "@/components/AppShell";
@@ -43,6 +45,14 @@ const AUDIENCE_TYPES = [
 ];
 
 export default function EstimatePage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push("/login");
+    }
+  }, [router]);
+
   const [activeTab, setActiveTab] = useState("calculator"); // 'calculator' | 'history'
 
   // Form state

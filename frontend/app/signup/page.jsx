@@ -94,8 +94,7 @@ export default function SignupPage() {
       <div className="auth-wrapper">
         {/* Logo */}
         <Link href="/" className="auth-logo">
-          <span className="auth-logo-icon">C</span>
-          <span className="auth-logo-name">CostifyAI</span>
+          <img src="/logo.png" alt="CostifyAI" className="h-8 w-auto" />
         </Link>
 
         {/* Card */}

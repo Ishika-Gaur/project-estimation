@@ -99,8 +99,7 @@ function ResetPasswordForm() {
         </div>
         <div className="auth-wrapper">
           <Link href="/" className="auth-logo">
-            <span className="auth-logo-icon">C</span>
-            <span className="auth-logo-name">CostifyAI</span>
+            <img src="/logo.png" alt="CostifyAI" className="h-8 w-auto" />
           </Link>
           <div className="auth-card rise">
             <div className="auth-card-head">
@@ -137,8 +136,7 @@ function ResetPasswordForm() {
       <div className="auth-wrapper">
         {/* Logo */}
         <Link href="/" className="auth-logo">
-          <span className="auth-logo-icon">C</span>
-          <span className="auth-logo-name">CostifyAI</span>
+          <img src="/logo.png" alt="CostifyAI" className="h-8 w-auto" />
         </Link>
 
         {/* Card */}

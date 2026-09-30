@@ -68,10 +68,7 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <div className="mb-8 flex justify-center">
           <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink text-ink-foreground shadow-sm">
-              <span className="font-display text-xl font-bold">C</span>
-            </div>
-            <span className="font-display text-2xl font-bold tracking-tight">CostifyAI</span>
+            <img src="/logo.png" alt="CostifyAI" className="h-10 w-auto" />
           </Link>
         </div>
 
