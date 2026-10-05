@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from ai_service import analyze_project
-from auth import get_optional_user
+from auth import get_current_user, get_optional_user
 from models import EstimateInput
 
 
@@ -106,10 +106,12 @@ async def create_estimate(payload: EstimateInput, request: Request, user=Depends
     try:
         analysis = await analyze_project(payload, db=request.app.state.db)
         estimate = _legacy_estimate(payload, analysis.model_dump(), user)
-        try:
-            await request.app.state.db.estimates.insert_one(estimate.copy())
-        except Exception:
-            pass
+        # Only persist estimate to database if requested by an authenticated user
+        if user and user.get("email"):
+            try:
+                await request.app.state.db.estimates.insert_one(estimate.copy())
+            except Exception:
+                pass
         return estimate
     except HTTPException:
         raise
@@ -124,12 +126,10 @@ async def create_estimate(payload: EstimateInput, request: Request, user=Depends
 @router.get("/estimates")
 async def list_estimates(request: Request, user=Depends(get_optional_user)):
     try:
-        query = {}
-        if user and user.get("email"):
-            query["user_email"] = user["email"]
-        else:
+        if not user or not user.get("email"):
             # Not logged in — return empty list instead of all estimates
             return []
+        query = {"user_email": user["email"].lower()}
         estimates = await request.app.state.db.estimates.find(query, {"_id": 0}).sort("createdAt", -1).to_list(50)
         for estimate in estimates:
             estimate.pop("created_at", None)
@@ -140,10 +140,43 @@ async def list_estimates(request: Request, user=Depends(get_optional_user)):
 
 @router.get("/estimates/{estimate_id}")
 async def get_estimate(estimate_id: str, request: Request, user=Depends(get_optional_user)):
-    query = {"id": estimate_id}
-    if user and user.get("email"):
-        query["user_email"] = user["email"]
-    estimate = await request.app.state.db.estimates.find_one(query, {"_id": 0})
+    estimate = await request.app.state.db.estimates.find_one({"id": estimate_id}, {"_id": 0})
     if not estimate:
         raise HTTPException(status_code=404, detail="Estimate not found.")
+    
+    owner_email = estimate.get("user_email")
+    if not owner_email:
+        # Legacy estimates without owner are restricted to admin
+        if not user or user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Access denied: this estimate has no associated owner.")
+        return estimate
+
+    if not user or not user.get("email"):
+        raise HTTPException(status_code=401, detail="Authentication required to view this estimate.")
+
+    if user.get("email").lower() != owner_email.lower() and user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="You do not have permission to view this estimate.")
+
     return estimate
+
+
+@router.delete("/estimates/{estimate_id}")
+async def delete_estimate(estimate_id: str, request: Request, user=Depends(get_current_user)):
+    """Delete a specific estimate belonging to the current user (or admin)."""
+    estimate = await request.app.state.db.estimates.find_one({"id": estimate_id})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimate not found.")
+
+    owner_email = estimate.get("user_email")
+    if user.get("email").lower() != (owner_email or "").lower() and user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="You do not have permission to delete this estimate.")
+
+    await request.app.state.db.estimates.delete_one({"id": estimate_id})
+    return {"message": "Estimate deleted successfully."}
+
+
+@router.delete("/estimates")
+async def clear_estimates(request: Request, user=Depends(get_current_user)):
+    """Delete all estimates owned by the current user."""
+    result = await request.app.state.db.estimates.delete_many({"user_email": user["email"].lower()})
+    return {"message": f"Deleted {result.deleted_count} estimate(s)."}

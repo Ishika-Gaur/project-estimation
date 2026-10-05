@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr
+import re
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import List, Literal, Optional
 
 
@@ -105,10 +106,42 @@ class AIAnalysis(BaseModel):
     suggestions: List[Suggestion]
 
 
+def _validate_password_strength(password: str) -> str:
+    """Enforce minimum password security policy."""
+    if len(password) < 8:
+        raise ValueError("Password must be at least 8 characters long.")
+    if len(password) > 128:
+        raise ValueError("Password must not exceed 128 characters.")
+    if not re.search(r"[A-Z]", password):
+        raise ValueError("Password must contain at least one uppercase letter.")
+    if not re.search(r"[a-z]", password):
+        raise ValueError("Password must contain at least one lowercase letter.")
+    if not re.search(r"\d", password):
+        raise ValueError("Password must contain at least one digit.")
+    if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':,./<>?|`~]", password):
+        raise ValueError("Password must contain at least one special character (e.g. !@#$%).")
+    return password
+
+
 class UserRegister(BaseModel):
     name: str
     email: EmailStr
     password: str
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        return _validate_password_strength(v)
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Name must not be empty.")
+        if len(v) > 100:
+            raise ValueError("Name must not exceed 100 characters.")
+        return v
 
 
 class UserLogin(BaseModel):
@@ -142,6 +175,11 @@ class PasswordResetRequest(BaseModel):
 class PasswordResetConfirm(BaseModel):
     token: str
     new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def new_password_strength(cls, v: str) -> str:
+        return _validate_password_strength(v)
 
 
 class RefreshToken(BaseModel):

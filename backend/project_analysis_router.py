@@ -17,20 +17,20 @@ async def create_analysis(payload: ProjectAnalysisInput, request: Request, user=
     try:
         analysis = await analyze_project(payload)
         
-        # Save analysis to database
-        analysis_doc = {
-            "id": f"analysis_{int(time.time() * 1000):x}{uuid.uuid4().hex[:6]}",
-            "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            "created_at": datetime.now(timezone.utc),
-            "user_email": user.get("email") if user else None,
-            "input": payload.model_dump(),
-            "result": analysis.model_dump(),
-        }
-        
-        try:
-            await request.app.state.db.project_analyses.insert_one(analysis_doc.copy())
-        except Exception:
-            pass  # Continue even if DB save fails
+        # Save analysis to database only when user is authenticated
+        if user and user.get("email"):
+            analysis_doc = {
+                "id": f"analysis_{int(time.time() * 1000):x}{uuid.uuid4().hex[:6]}",
+                "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "created_at": datetime.now(timezone.utc),
+                "user_email": user.get("email").lower(),
+                "input": payload.model_dump(),
+                "result": analysis.model_dump(),
+            }
+            try:
+                await request.app.state.db.project_analyses.insert_one(analysis_doc.copy())
+            except Exception:
+                pass  # Continue even if DB save fails
         
         return analysis
     except ValueError as exc:
@@ -63,12 +63,11 @@ async def create_task_plan(payload: TaskPlanInput):
 
 @router.get("/analyses")
 async def list_analyses(request: Request, user=Depends(get_optional_user)):
-    """List project analyses for the current user"""
+    """List project analyses for the current authenticated user"""
+    if not user or not user.get("email"):
+        return []
     try:
-        query = {}
-        if user:
-            query["user_email"] = user.get("email")
-        
+        query = {"user_email": user["email"].lower()}
         analyses = await request.app.state.db.project_analyses.find(
             query, {"_id": 0}
         ).sort("createdAt", -1).to_list(20)
@@ -82,14 +81,21 @@ async def list_analyses(request: Request, user=Depends(get_optional_user)):
 
 
 @router.get("/analyses/{analysis_id}")
-async def get_analysis(analysis_id: str, request: Request):
-    """Get a specific project analysis by ID"""
+async def get_analysis(analysis_id: str, request: Request, user=Depends(get_optional_user)):
+    """Get a specific project analysis by ID with strict access control"""
     try:
         analysis = await request.app.state.db.project_analyses.find_one(
             {"id": analysis_id}, {"_id": 0}
         )
         if not analysis:
             raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        owner_email = analysis.get("user_email")
+        if owner_email:
+            if not user or not user.get("email"):
+                raise HTTPException(status_code=401, detail="Authentication required to view this project analysis.")
+            if user.get("email").lower() != owner_email.lower() and user.get("role") != "admin":
+                raise HTTPException(status_code=403, detail="You do not have permission to view this project analysis.")
         
         analysis.pop("created_at", None)
         return analysis

@@ -10,3 +10,4 @@ passlib[bcrypt]
 httpx
 slowapi
 redis
+certifi

@@ -43,6 +43,12 @@ def create_refresh_token(data: dict) -> str:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
+def create_password_reset_token(email: str, expire_minutes: int = 60) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=expire_minutes)
+    to_encode = {"sub": email.lower(), "type": "password_reset", "exp": expire}
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 from fastapi import Request  # noqa: E402 — imported here to use db from app state
 
@@ -62,15 +68,37 @@ async def get_current_user(
         return None
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        email = payload.get("sub")
-        if not email:
-            raise JWTError
     except JWTError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token.") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
+    email = payload.get("sub")
+    token_type = payload.get("type")
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing user identity.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if token_type != "access":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid token type: expected 'access', got '{token_type or 'unknown'}'.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     user = await request.app.state.db.users.find_one({"email": email.lower()})
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User account not found.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account not found.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user
 
 
@@ -163,14 +191,11 @@ async def password_reset_request(payload: PasswordResetRequest, request: Request
     user = await db.users.find_one({"email": payload.email.lower()})
     
     if not user:
-        # Don't reveal if email exists for security
-        return {"message": "If the email exists, a reset link has been sent."}
+        # Don't reveal if email exists for security (prevent account enumeration)
+        return {"message": "If that email address is registered, a password reset link has been sent."}
     
-    # Generate reset token (valid for 1 hour)
-    reset_token = create_access_token(
-        {"sub": user["email"], "type": "password_reset"},
-        expire_minutes=60
-    )
+    # Generate reset token (valid for 1 hour) with type="password_reset"
+    reset_token = create_password_reset_token(user["email"], expire_minutes=60)
     
     # Store reset token in user document
     await db.users.update_one(
@@ -178,11 +203,12 @@ async def password_reset_request(payload: PasswordResetRequest, request: Request
         {"$set": {"reset_token": reset_token, "reset_token_expires": datetime.now(timezone.utc) + timedelta(hours=1)}}
     )
     
-    # In production, send email with reset link
-    # For now, return the token (for testing purposes)
+    # Log reset link to server console for local testing without exposing token to the client
+    reset_link = f"http://localhost:3000/reset-password?token={reset_token}"
+    print(f"[CostifyAI Auth] Password reset requested for {user['email']}. Local reset link: {reset_link}")
+
     return {
-        "message": "Password reset link sent to email",
-        "reset_token": reset_token  # Remove this in production
+        "message": "If that email address is registered, a password reset link has been sent."
     }
 
 

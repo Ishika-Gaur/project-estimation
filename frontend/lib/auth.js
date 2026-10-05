@@ -40,14 +40,14 @@ export function removeToken() {
   }
 }
 
-/** Check if the user is logged in (token exists and not expired) */
+/** Check if the user is logged in (token exists, is an access token, and not expired) */
 export function isLoggedIn() {
   const token = getToken();
   if (!token) return false;
   try {
     const payload = decodeToken(token);
     if (!payload || !payload.exp) return false;
-    return payload.exp * 1000 > Date.now();
+    return payload.type === "access" && payload.exp * 1000 > Date.now();
   } catch {
     return false;
   }
@@ -78,7 +78,7 @@ export function getUser() {
   const token = getToken();
   if (!token) return null;
   const payload = decodeToken(token);
-  return payload
+  return payload && payload.type === "access"
     ? {
         name: payload.name || payload.sub || "User",
         email: payload.sub,

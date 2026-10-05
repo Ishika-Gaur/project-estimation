@@ -11,6 +11,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from datetime import datetime, timezone
+import certifi
 
 load_dotenv()
 
@@ -39,39 +40,65 @@ async def mongo_error_handler(request: Request, exc: PyMongoError):
     )
 
 
+# ── CORS Whitelist Configuration ──────────────────────────────────────────────
+DEFAULT_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://project-estimation-3ejl.onrender.com",
+]
+
+env_origins = os.getenv("ALLOWED_ORIGINS", "")
+ALLOWED_ORIGINS = [
+    orig.strip().rstrip("/")
+    for orig in env_origins.split(",")
+    if orig.strip()
+] if env_origins else DEFAULT_ALLOWED_ORIGINS
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    origin = request.headers.get("origin", "")
-    cors_origin = origin if (".onrender.com" in origin or "localhost" in origin) else "https://project-estimation-3ejl.onrender.com"
+    origin = request.headers.get("origin", "").rstrip("/")
+    headers = {}
+    if origin in ALLOWED_ORIGINS:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, X-Requested-With"
+        headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+
+    # Log exception internally for debugging without exposing raw stack trace to clients
+    print(f"[CostifyAI Server Error] {request.method} {request.url.path}: {exc}")
+
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Internal Server Error: {str(exc)}"},
-        headers={
-            "Access-Control-Allow-Origin": cors_origin,
-            "Access-Control-Allow-Credentials": "true",
-        },
+        content={"detail": "An internal server error occurred."},
+        headers=headers,
     )
 
 # Add CORS middleware BEFORE including routers
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://project-estimation-3ejl.onrender.com",
-    ],
-    allow_origin_regex=r"https://.*\.onrender\.com",
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
+    expose_headers=["Content-Type", "Authorization"],
 )
 
-MONGO_URI = os.getenv("MONGO_URI")
-client = AsyncIOMotorClient(
-    MONGO_URI,
-    tlsAllowInvalidCertificates=True,
-    serverSelectionTimeoutMS=int(os.getenv("MONGO_SERVER_SELECTION_TIMEOUT_MS", "5000")),
-)
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+mongo_kwargs = {
+    "serverSelectionTimeoutMS": int(os.getenv("MONGO_SERVER_SELECTION_TIMEOUT_MS", "5000")),
+}
+
+# Enforce trusted root CA verification via certifi for TLS / Atlas connections
+if "mongodb+srv://" in MONGO_URI or "tls=true" in MONGO_URI.lower() or "ssl=true" in MONGO_URI.lower():
+    mongo_kwargs["tlsCAFile"] = certifi.where()
+
+# Strictly verify TLS by default. Only allow override if explicitly configured for local development.
+if os.getenv("MONGO_TLS_ALLOW_INVALID_CERTIFICATES", "false").lower() == "true":
+    mongo_kwargs["tlsAllowInvalidCertificates"] = True
+    print("[CostifyAI WARNING] Insecure MongoDB TLS validation is active via MONGO_TLS_ALLOW_INVALID_CERTIFICATES!")
+
+client = AsyncIOMotorClient(MONGO_URI, **mongo_kwargs)
 db = client.project_estimation
 
 # Attach db to app state so routers can access it via request.app.state.db
@@ -85,9 +112,40 @@ app.include_router(project_analysis_router)
 app.include_router(market_rate_router)
 
 
+async def init_db_indexes(database):
+    """Ensure essential indexes exist for performance, fast aggregations, and unique constraints."""
+    try:
+        # 1. users: unique email prevents race condition on registration; created_at for admin sorting
+        await database.users.create_index("email", unique=True)
+        await database.users.create_index([("created_at", -1)])
+
+        # 2. estimates: unique id; compound user_email + createdAt for fast history queries
+        await database.estimates.create_index("id", unique=True)
+        await database.estimates.create_index([("user_email", 1), ("createdAt", -1)])
+        await database.estimates.create_index([("createdAt", -1)])
+        await database.estimates.create_index([("created_at", -1)])
+        await database.estimates.create_index([("project_category", 1)])
+        await database.estimates.create_index([("complexity", 1)])
+
+        # 3. project_analyses: unique id; compound user_email + createdAt for user audits
+        await database.project_analyses.create_index("id", unique=True)
+        await database.project_analyses.create_index([("user_email", 1), ("createdAt", -1)])
+
+        # 4. market_rates: effective_from for latest snapshot lookups
+        await database.market_rates.create_index([("effective_from", -1)])
+
+        print("[CostifyAI] MongoDB indexes verified and initialized.")
+    except Exception as exc:
+        print(f"[CostifyAI] Warning: Could not initialize database indexes ({exc}).")
+
+
 @app.on_event("startup")
-async def seed_admin():
-    """Auto-create the hardcoded admin account if it doesn't already exist."""
+async def startup_init():
+    """Initialize database indexes, seed default admin, and start background workers."""
+    # 1. Initialize MongoDB indexes
+    await init_db_indexes(db)
+
+    # 2. Auto-create admin account if it doesn't already exist
     try:
         from auth import hash_password
         existing = await db.users.find_one({"email": ADMIN_EMAIL.lower()})
@@ -110,7 +168,7 @@ async def seed_admin():
     except Exception as e:
         print(f"[CostifyAI] Warning: Could not seed admin on startup ({e}). Will retry on first request.")
 
-    # Start the weekly market-rate updater in the background
+    # 3. Start the weekly market-rate updater in the background
     asyncio.create_task(weekly_rate_updater(db))
     print("[CostifyAI] Market-rate background updater started.")
 
