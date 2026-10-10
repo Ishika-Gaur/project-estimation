@@ -15,10 +15,16 @@ import certifi
 
 load_dotenv()
 
-# ── Hardcoded Admin Credentials ───────────────────────────────────────────────
-ADMIN_EMAIL    = "admin@CostifyAI.com"
-ADMIN_PASSWORD = "Admin@1234"
-ADMIN_NAME     = "CostifyAI Admin"
+# ── Admin Credentials (loaded from environment variables) ────────────────────
+ADMIN_EMAIL    = os.getenv("ADMIN_EMAIL", "admin@costifyai.com")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")  # No default — must be set in .env
+ADMIN_NAME     = os.getenv("ADMIN_NAME", "CostifyAI Admin")
+
+if not ADMIN_PASSWORD:
+    raise RuntimeError(
+        "ADMIN_PASSWORD environment variable is not set. "
+        "Add it to your .env file before starting the server."
+    )
 
 from auth import router as auth_router, limiter
 from estimate_router import router as estimate_router
