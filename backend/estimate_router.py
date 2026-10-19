@@ -110,8 +110,8 @@ async def create_estimate(payload: EstimateInput, request: Request, user=Depends
         if user and user.get("email"):
             try:
                 await request.app.state.db.estimates.insert_one(estimate.copy())
-            except Exception:
-                pass
+            except Exception as exc:
+                raise HTTPException(status_code=500, detail="Failed to save estimate.") from exc
         return estimate
     except HTTPException:
         raise
@@ -120,7 +120,7 @@ async def create_estimate(payload: EstimateInput, request: Request, user=Depends
     except Exception as exc:
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Failed to generate estimate: {str(exc)}") from exc
+        raise HTTPException(status_code=500, detail="Failed to generate estimate.") from exc
 
 
 @router.get("/estimates")
