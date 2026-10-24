@@ -5,32 +5,31 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from project_analysis_service import analyze_project, generate_task_plan
 from models import ProjectAnalysisInput, TaskPlanInput
-from auth import get_optional_user
+from auth import require_user, get_optional_user
 
 
 router = APIRouter(prefix="/api/project-analysis", tags=["project-analysis"])
 
 
 @router.post("/analyze")
-async def create_analysis(payload: ProjectAnalysisInput, request: Request, user=Depends(get_optional_user)):
-    """Analyze a project based on description, GitHub URL, and/or deployed URL"""
+async def create_analysis(payload: ProjectAnalysisInput, request: Request, user=Depends(require_user)):
+    """Analyze a project based on description, GitHub URL, and/or deployed URL (requires authentication)"""
     try:
         analysis = await analyze_project(payload)
         
-        # Save analysis to database only when user is authenticated
-        if user and user.get("email"):
-            analysis_doc = {
-                "id": f"analysis_{int(time.time() * 1000):x}{uuid.uuid4().hex[:6]}",
-                "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                "created_at": datetime.now(timezone.utc),
-                "user_email": user.get("email").lower(),
-                "input": payload.model_dump(),
-                "result": analysis.model_dump(),
-            }
-            try:
-                await request.app.state.db.project_analyses.insert_one(analysis_doc.copy())
-            except Exception:
-                pass  # Continue even if DB save fails
+        # Save analysis to database for the authenticated user
+        analysis_doc = {
+            "id": f"analysis_{int(time.time() * 1000):x}{uuid.uuid4().hex[:6]}",
+            "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "created_at": datetime.now(timezone.utc),
+            "user_email": user.get("email").lower(),
+            "input": payload.model_dump(),
+            "result": analysis.model_dump(),
+        }
+        try:
+            await request.app.state.db.project_analyses.insert_one(analysis_doc.copy())
+        except Exception:
+            pass  # Continue even if DB save fails
         
         return analysis
     except ValueError as exc:
@@ -42,8 +41,8 @@ async def create_analysis(payload: ProjectAnalysisInput, request: Request, user=
 
 
 @router.post("/task-plan")
-async def create_task_plan(payload: TaskPlanInput):
-    """Generate a task plan based on project analysis"""
+async def create_task_plan(payload: TaskPlanInput, user=Depends(require_user)):
+    """Generate a task plan based on project analysis (requires authentication)"""
     try:
         if payload.work_type not in ["solo", "team"]:
             raise HTTPException(status_code=400, detail="work_type must be 'solo' or 'team'")
@@ -63,7 +62,7 @@ async def create_task_plan(payload: TaskPlanInput):
 
 @router.get("/analyses")
 async def list_analyses(request: Request, user=Depends(get_optional_user)):
-    """List project analyses for the current authenticated user"""
+    """List project analyses strictly for the current authenticated user (empty for unauthenticated)"""
     if not user or not user.get("email"):
         return []
     try:
@@ -81,7 +80,7 @@ async def list_analyses(request: Request, user=Depends(get_optional_user)):
 
 
 @router.get("/analyses/{analysis_id}")
-async def get_analysis(analysis_id: str, request: Request, user=Depends(get_optional_user)):
+async def get_analysis(analysis_id: str, request: Request, user=Depends(require_user)):
     """Get a specific project analysis by ID with strict access control"""
     try:
         analysis = await request.app.state.db.project_analyses.find_one(
@@ -91,11 +90,13 @@ async def get_analysis(analysis_id: str, request: Request, user=Depends(get_opti
             raise HTTPException(status_code=404, detail="Analysis not found")
         
         owner_email = analysis.get("user_email")
-        if owner_email:
-            if not user or not user.get("email"):
-                raise HTTPException(status_code=401, detail="Authentication required to view this project analysis.")
-            if user.get("email").lower() != owner_email.lower() and user.get("role") != "admin":
-                raise HTTPException(status_code=403, detail="You do not have permission to view this project analysis.")
+        if not owner_email:
+            if user.get("role") != "admin":
+                raise HTTPException(status_code=403, detail="Access denied: analysis has no owner.")
+            return analysis
+
+        if user.get("email").lower() != owner_email.lower() and user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="You do not have permission to view this project analysis.")
         
         analysis.pop("created_at", None)
         return analysis

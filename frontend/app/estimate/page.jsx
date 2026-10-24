@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { isLoggedIn } from "@/lib/auth";
 import { MarketingHeader } from "@/components/MarketingHeader";
 import { MarketingFooter } from "@/components/MarketingFooter";
 import { AppShell } from "@/components/AppShell";
 import { EstimateReport } from "@/components/EstimateReport";
+import { AuthGate } from "@/components/AuthGate";
 import {
   PLATFORMS,
   POPULAR_TECHS,
@@ -45,13 +45,7 @@ const AUDIENCE_TYPES = [
 ];
 
 export default function EstimatePage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoggedIn()) {
-      router.push("/login");
-    }
-  }, [router]);
+  const [showAuthGate, setShowAuthGate] = useState(false);
 
   const [activeTab, setActiveTab] = useState("calculator"); // 'calculator' | 'history'
 
@@ -103,6 +97,10 @@ export default function EstimatePage() {
 
   const handleCalculate = async (e) => {
     e.preventDefault();
+    if (!isLoggedIn()) {
+      setShowAuthGate(true);
+      return;
+    }
     setErrorMessage("");
     setIsCalculating(true);
 
@@ -591,6 +589,12 @@ export default function EstimatePage() {
       </AppShell>
 
       <MarketingFooter />
+
+      <AuthGate
+        open={showAuthGate}
+        onClose={() => setShowAuthGate(false)}
+        message="Sign up or log in to generate your project cost estimate."
+      />
     </div>
   );
 }

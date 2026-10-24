@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { MarketingHeader } from "@/components/MarketingHeader";
 import { MarketingFooter } from "@/components/MarketingFooter";
 import { AppShell } from "@/components/AppShell";
 import { authFetch, isLoggedIn } from "@/lib/auth";
+import { AuthGate } from "@/components/AuthGate";
 import {
   Sparkles,
   Github,
@@ -30,13 +30,7 @@ import {
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
 export default function AnalyzePage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoggedIn()) {
-      router.push("/login");
-    }
-  }, [router]);
+  const [showAuthGate, setShowAuthGate] = useState(false);
   
   // Form state
   const [description, setDescription] = useState("");
@@ -60,6 +54,10 @@ export default function AnalyzePage() {
   const handleAnalyze = async (e) => {
     e.preventDefault();
     if (!validateInput()) return;
+    if (!isLoggedIn()) {
+      setShowAuthGate(true);
+      return;
+    }
     
     setIsAnalyzing(true);
     setError("");
@@ -436,6 +434,12 @@ export default function AnalyzePage() {
       </AppShell>
       
       <MarketingFooter />
+
+      <AuthGate
+        open={showAuthGate}
+        onClose={() => setShowAuthGate(false)}
+        message="Sign up or log in to analyze your project."
+      />
     </div>
   );
 }

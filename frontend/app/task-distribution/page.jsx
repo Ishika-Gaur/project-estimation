@@ -6,7 +6,7 @@ import { MarketingHeader } from "@/components/MarketingHeader";
 import { MarketingFooter } from "@/components/MarketingFooter";
 import { AppShell } from "@/components/AppShell";
 import { authFetch, isLoggedIn } from "@/lib/auth";
-import { useRouter } from "next/navigation";
+import { AuthGate } from "@/components/AuthGate";
 import {
   Users,
   Target,
@@ -24,6 +24,7 @@ import {
   ExternalLink,
   ChevronDown,
   Search,
+  Lock,
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://project-estimation-backend-fp5x.onrender.com";
@@ -116,13 +117,7 @@ function TaskRow({ task, index }) {
 }
 
 export default function TaskDistributionPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoggedIn()) {
-      router.push("/login");
-    }
-  }, [router]);
+  const [showAuthGate, setShowAuthGate] = useState(false);
 
   // Project Analysis State
   const [analysis, setAnalysis] = useState(null);
@@ -145,17 +140,18 @@ export default function TaskDistributionPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
 
-  // Load latest analysis on mount
+  const [isAuth, setIsAuth] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Load latest analysis on mount with authentication verification
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("CostifyAI_latest_analysis");
-      if (stored) {
-        setAnalysis(JSON.parse(stored));
-      } else {
-        setAnalysis(SAMPLE_PROJECTS[0]);
-      }
-    } catch {
-      setAnalysis(SAMPLE_PROJECTS[0]);
+    const authed = isLoggedIn();
+    setIsAuth(authed);
+    setAuthChecked(true);
+
+    if (!authed) {
+      setAnalysis(null);
+      return;
     }
 
     const fetchSaved = async () => {
@@ -166,12 +162,29 @@ export default function TaskDistributionPage() {
           const list = await res.json();
           if (Array.isArray(list) && list.length > 0) {
             setSavedAnalyses(list);
+            const latest = list[0]?.result
+              ? { ...list[0].result, title: list[0].input?.project_name || list[0].result?.project_type || "Analyzed Project" }
+              : list[0];
+            setAnalysis(latest);
+            return;
           }
         }
       } catch {
         // Ignore silent fetch errors
       } finally {
         setIsLoadingSaved(false);
+      }
+
+      // Check localStorage only if user is logged in
+      try {
+        const stored = localStorage.getItem("CostifyAI_latest_analysis");
+        if (stored) {
+          setAnalysis(JSON.parse(stored));
+        } else {
+          setAnalysis(null);
+        }
+      } catch {
+        setAnalysis(null);
       }
     };
     fetchSaved();
@@ -192,15 +205,25 @@ export default function TaskDistributionPage() {
   };
 
   const selectProject = (proj) => {
-    setAnalysis(proj);
+    const selected = proj?.result
+      ? { ...proj.result, title: proj.input?.project_name || proj.result?.project_type || "Analyzed Project" }
+      : proj;
+    setAnalysis(selected);
     setTaskPlan(null);
     setShowProjectPicker(false);
-    localStorage.setItem("CostifyAI_latest_analysis", JSON.stringify(proj));
+    try {
+      localStorage.setItem("CostifyAI_latest_analysis", JSON.stringify(selected));
+    } catch {}
   };
 
   const handleGenerateTaskPlan = async () => {
     if (!analysis) {
       setError("Please choose or analyze a project first.");
+      return;
+    }
+
+    if (!isLoggedIn()) {
+      setShowAuthGate(true);
       return;
     }
 
@@ -324,103 +347,172 @@ export default function TaskDistributionPage() {
             </div>
 
             {/* Project selector */}
-            <div className="relative shrink-0 sm:w-72">
-              <button
-                onClick={() => setShowProjectPicker(!showProjectPicker)}
-                className="flex w-full items-center justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-left transition hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium text-foreground">
-                    {analysis?.title || analysis?.project_type || "Select a project"}
+            {(isAuth || analysis) && (
+              <div className="relative shrink-0 sm:w-72">
+                <button
+                  onClick={() => setShowProjectPicker(!showProjectPicker)}
+                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-left transition hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-foreground">
+                      {analysis?.title || analysis?.project_type || "Select a project"}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {analysis ? `${completionPct}% complete` : "No project selected"}
+                    </span>
                   </span>
-                  <span className="block text-xs text-muted-foreground">
-                    {analysis ? `${completionPct}% complete` : "No project selected"}
-                  </span>
-                </span>
-                <ChevronDown
-                  className={`size-4 shrink-0 text-muted-foreground transition-transform ${showProjectPicker ? "rotate-180" : ""}`}
-                />
-              </button>
+                  <ChevronDown
+                    className={`size-4 shrink-0 text-muted-foreground transition-transform ${showProjectPicker ? "rotate-180" : ""}`}
+                  />
+                </button>
 
-              {showProjectPicker && (
-                <div className="absolute right-0 z-20 mt-2 w-full overflow-hidden rounded-lg border border-line bg-surface shadow-lift">
-                  {isLoadingSaved && (
-                    <div className="flex items-center gap-2 px-4 py-3 text-xs text-muted-foreground">
-                      <Loader2 className="size-3.5 animate-spin" />
-                      Loading your saved analyses…
-                    </div>
-                  )}
+                {showProjectPicker && (
+                  <div className="absolute right-0 z-20 mt-2 w-full overflow-hidden rounded-lg border border-line bg-surface shadow-lift">
+                    {isLoadingSaved && (
+                      <div className="flex items-center gap-2 px-4 py-3 text-xs text-muted-foreground">
+                        <Loader2 className="size-3.5 animate-spin" />
+                        Loading your saved analyses…
+                      </div>
+                    )}
 
-                  {savedAnalyses.length > 0 && (
-                    <div className="border-b border-line p-1.5">
-                      <p className="px-2.5 py-1.5 text-xs text-muted-foreground">Your analyses</p>
-                      {savedAnalyses.map((s, idx) => (
+                    {isAuth && savedAnalyses.length > 0 && (
+                      <div className="border-b border-line p-1.5">
+                        <p className="px-2.5 py-1.5 text-xs text-muted-foreground">Your analyses</p>
+                        {savedAnalyses.map((s, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => selectProject(s)}
+                            className="flex w-full items-center justify-between gap-3 rounded-md px-2.5 py-2 text-left transition hover:bg-background"
+                          >
+                            <span className="min-w-0 truncate text-sm text-foreground">
+                              {s.input?.project_name || s.result?.project_type || s.project_type || "Analyzed Project"}
+                            </span>
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                              {s.result?.overall_completion ?? s.overall_completion}%
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="p-1.5">
+                      <p className="px-2.5 py-1.5 text-xs text-muted-foreground">Demo Templates (Sample)</p>
+                      {SAMPLE_PROJECTS.map((p, idx) => (
                         <button
                           key={idx}
-                          onClick={() => selectProject(s)}
+                          onClick={() => selectProject(p)}
                           className="flex w-full items-center justify-between gap-3 rounded-md px-2.5 py-2 text-left transition hover:bg-background"
                         >
-                          <span className="min-w-0 truncate text-sm text-foreground">{s.project_type || "Analyzed Project"}</span>
-                          <span className="shrink-0 text-xs text-muted-foreground">{s.overall_completion}%</span>
+                          <span className="min-w-0 truncate text-sm text-foreground">{p.title}</span>
+                          <span className="shrink-0 text-xs text-muted-foreground">{p.overall_completion}%</span>
                         </button>
                       ))}
                     </div>
-                  )}
 
-                  <div className="p-1.5">
-                    <p className="px-2.5 py-1.5 text-xs text-muted-foreground">Template projects</p>
-                    {SAMPLE_PROJECTS.map((p, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => selectProject(p)}
-                        className="flex w-full items-center justify-between gap-3 rounded-md px-2.5 py-2 text-left transition hover:bg-background"
-                      >
-                        <span className="min-w-0 truncate text-sm text-foreground">{p.title}</span>
-                        <span className="shrink-0 text-xs text-muted-foreground">{p.overall_completion}%</span>
-                      </button>
-                    ))}
+                    <Link
+                      href="/analyze"
+                      className="flex items-center justify-center gap-1.5 border-t border-line px-4 py-2.5 text-xs text-muted-foreground transition hover:bg-background hover:text-foreground"
+                    >
+                      Analyze another repo
+                      <ExternalLink className="size-3" />
+                    </Link>
                   </div>
-
-                  <Link
-                    href="/analyze"
-                    className="flex items-center justify-center gap-1.5 border-t border-line px-4 py-2.5 text-xs text-muted-foreground transition hover:bg-background hover:text-foreground"
-                  >
-                    Analyze another repo
-                    <ExternalLink className="size-3" />
-                  </Link>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Project summary strip */}
-          {analysis && (
-            <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Layers className="size-4 text-accent" />
-                  {analysis.modules?.length || 0} modules
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock className="size-4 text-accent" />
-                  {analysis.estimated_remaining_hours || 0}h remaining
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="size-4 text-emerald-500" />
-                  {analysis.completed_features?.length || 0} features done
-                </span>
+          {!isAuth && !analysis ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-line bg-surface/80 p-8 text-center sm:p-12 shadow-lift">
+              <div className="mb-4 flex size-14 items-center justify-center rounded-2xl border border-line bg-background text-accent shadow-sm">
+                <Lock className="size-6" />
               </div>
-              <div className="flex items-center gap-3">
-                <div className="h-1.5 w-28 overflow-hidden rounded-full bg-line sm:w-32">
-                  <div
-                    className="h-full rounded-full bg-accent transition-all duration-500"
-                    style={{ width: `${Math.max(4, completionPct)}%` }}
-                  />
-                </div>
-                <span className="text-sm font-semibold text-foreground">{completionPct}%</span>
+              <h2 className="font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                Authentication Required
+              </h2>
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                Sign in or create an account to view your project analyses and generate tailored team workload distributions.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/login"
+                  className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink transition hover:opacity-90"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="rounded-lg border border-line bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-background"
+                >
+                  Create Free Account
+                </Link>
+              </div>
+              <div className="mt-8 border-t border-line/60 pt-5">
+                <button
+                  type="button"
+                  onClick={() => setAnalysis(SAMPLE_PROJECTS[0])}
+                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+                >
+                  Or preview with a sample demo template
+                </button>
               </div>
             </div>
-          )}
+          ) : !analysis ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-line bg-surface/80 p-8 text-center sm:p-12">
+              <div className="mb-4 flex size-14 items-center justify-center rounded-2xl border border-line bg-background text-accent">
+                <Layers className="size-6" />
+              </div>
+              <h2 className="font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                No Project Analysis Found
+              </h2>
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                You haven&apos;t analyzed a project yet. Analyze your repository or project specifications first to generate automated task sequences and team workload distributions.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/analyze"
+                  className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink transition hover:opacity-90"
+                >
+                  Analyze a Project
+                  <ArrowRight className="size-4" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setAnalysis(SAMPLE_PROJECTS[0])}
+                  className="rounded-lg border border-line bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-background"
+                >
+                  Explore Sample Template
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Project summary strip */}
+              <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Layers className="size-4 text-accent" />
+                    {analysis.modules?.length || 0} modules
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="size-4 text-accent" />
+                    {analysis.estimated_remaining_hours || 0}h remaining
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle2 className="size-4 text-emerald-500" />
+                    {analysis.completed_features?.length || 0} features done
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-1.5 w-28 overflow-hidden rounded-full bg-line sm:w-32">
+                    <div
+                      className="h-full rounded-full bg-accent transition-all duration-500"
+                      style={{ width: `${Math.max(4, completionPct)}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-semibold text-foreground">{completionPct}%</span>
+                </div>
+              </div>
 
           {/* Configuration toolbar */}
           <div className="space-y-5 rounded-xl border border-line bg-surface p-5 sm:p-6">
@@ -705,10 +797,18 @@ export default function TaskDistributionPage() {
               )}
             </div>
           )}
-        </div>
-      </AppShell>
+        </>
+      )}
+    </div>
+  </AppShell>
 
       <MarketingFooter />
+
+      <AuthGate
+        open={showAuthGate}
+        onClose={() => setShowAuthGate(false)}
+        message="Sign up or log in to generate your task distribution plan."
+      />
     </div>
   );
 }

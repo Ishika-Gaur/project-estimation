@@ -108,6 +108,16 @@ async def require_admin(user=Depends(get_current_user)):
     return user
 
 
+async def require_user(user=Depends(get_current_user)):
+    if not user or not user.get("email"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required. Please log in.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
 async def get_optional_user(user=Depends(get_current_user)):
     return user
 

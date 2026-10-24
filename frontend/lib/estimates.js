@@ -89,7 +89,12 @@ export async function generateEstimate(input) {
     let detail = "Failed to generate estimate";
     try {
       const body = await res.json();
-      detail = body.detail || detail;
+      // FastAPI 422 returns detail as an array of validation error objects
+      if (Array.isArray(body.detail)) {
+        detail = body.detail.map((e) => e.msg || JSON.stringify(e)).join(". ");
+      } else if (typeof body.detail === "string") {
+        detail = body.detail;
+      }
     } catch {
       // Keep the generic message when the backend did not return JSON.
     }

@@ -358,6 +358,13 @@ class TestProjectAnalysisAuth:
         assert BOB_EMAIL.lower()   not in a_emails
         assert ALICE_EMAIL.lower() not in b_emails
 
+    async def test_task_plan_unauthenticated_blocked(self, client):
+        r = await client.post("/api/project-analysis/task-plan", json={
+            "analysis": {"overall_completion": 50, "project_type": "Web App"},
+            "work_type": "solo"
+        })
+        assert r.status_code == 401
+
 
 # =====================================================================
 # 7. SSRF PROTECTION
