@@ -39,7 +39,7 @@ export function MarketingHeader() {
     removeToken();
     setLoggedIn(false);
     setUser(null);
-    router.push("/");
+    window.location.href = "/";
   }
 
   return (

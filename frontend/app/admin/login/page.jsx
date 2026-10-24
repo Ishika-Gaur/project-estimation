@@ -37,6 +37,7 @@ export default function AdminLoginPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.detail || "Login failed. Please try again.");
+        setLoading(false);
         return;
       }
       
@@ -44,14 +45,14 @@ export default function AdminLoginPage() {
       if (data.role !== "admin") {
         removeToken();
         setError("Unauthorized. This portal is strictly for administrators.");
+        setLoading(false);
         return;
       }
       
       setToken(data.access_token, data.refresh_token);
-      router.push("/admin");
+      window.location.href = "/admin";
     } catch {
       setError("Could not reach the server. Make sure the backend is running.");
-    } finally {
       setLoading(false);
     }
   }

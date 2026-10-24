@@ -37,20 +37,21 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.detail || "Login failed. Please try again.");
+        setLoading(false);
         return;
       }
       // User portal authorization check
       if (data.role === "admin") {
         removeToken();
         setError("Admins cannot log in here. Please use the Admin Portal.");
+        setLoading(false);
         return;
       }
 
       setToken(data.access_token, data.refresh_token);
-      router.push("/estimate");
+      window.location.href = "/estimate";
     } catch {
       setError("Could not reach the server. Make sure the backend is running.");
-    } finally {
       setLoading(false);
     }
   }

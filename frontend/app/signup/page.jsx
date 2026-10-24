@@ -72,13 +72,13 @@ export default function SignupPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.detail || "Registration failed. Please try again.");
+        setLoading(false);
         return;
       }
       setToken(data.access_token, data.refresh_token);
-      router.push("/estimate");
+      window.location.href = "/estimate";
     } catch {
       setError("Could not reach the server. Make sure the backend is running.");
-    } finally {
       setLoading(false);
     }
   }
@@ -199,11 +199,10 @@ export default function SignupPage() {
                   value={form.confirm}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className={`auth-input auth-input-pw ${
-                    form.confirm && form.confirm !== form.password
+                  className={`auth-input auth-input-pw ${form.confirm && form.confirm !== form.password
                       ? "auth-input-err"
                       : ""
-                  }`}
+                    }`}
                 />
                 <button
                   type="button"
