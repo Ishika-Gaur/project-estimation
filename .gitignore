@@ -1,1 +1,16 @@
+# Environment
 backend/.env
+backend/.env.*
+frontend/.env*.local
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Next.js & Node
+frontend/.next/
+frontend/.next-dev/
+frontend/node_modules/
+node_modules/
